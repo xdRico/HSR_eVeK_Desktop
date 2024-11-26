@@ -1,12 +1,14 @@
 package org.hsrt.database.models;
 
 import jakarta.persistence.*;
+
+import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
 
 @Entity
 @Table(name = "transportDetails")
-public class TransportDetails {
+public class TransportDetails implements Serializable {
 
     @Id
     @Column(name = "transportId", nullable = false)

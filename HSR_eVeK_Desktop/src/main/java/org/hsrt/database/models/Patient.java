@@ -1,11 +1,13 @@
 package org.hsrt.database.models;
 import jakarta.persistence.*;
+
+import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
 
 @Entity
 @Table(name = "patient")
-public class Patient {
+public class Patient implements Serializable {
     @Id
     @GeneratedValue
     private UUID patientId;
