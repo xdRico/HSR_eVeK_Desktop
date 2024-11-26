@@ -1,8 +1,0 @@
-/**
- * 
- */
-/**
- * 
- */
-module eVeK_Desktop {
-}
