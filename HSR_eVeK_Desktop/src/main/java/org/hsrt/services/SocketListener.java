@@ -5,10 +5,15 @@ import org.hsrt.database.models.*;
 
 import java.io.IOException;
 import java.net.SocketException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SocketListener implements Runnable{
-    private final SocketConfig socketConfig;
+    private SocketConfig socketConfig;
     private volatile boolean running = true;
+    private AtomicReference<User> authenticatedUser = new AtomicReference<>();
+    private CountDownLatch latch = new CountDownLatch(1);
+
 
     public SocketListener(SocketConfig socketConfig) {
         this.socketConfig = socketConfig;
@@ -33,6 +38,8 @@ private void processReceivedObject(Object receivedObject) {
             User user = (User) receivedObject;
             UserService userService = new UserService();
             userService.saveUser(user);
+            authenticatedUser.set(user);
+            latch.countDown();
             System.out.println("Received and processed User object: " + user.getUserName());
             break;
         case "Address":
@@ -82,6 +89,14 @@ private void processReceivedObject(Object receivedObject) {
             break;
     }
 }
+    public User getAuthenticatedUser() {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        return authenticatedUser.get();
+    }
 
     public void stop() {
         running = false;

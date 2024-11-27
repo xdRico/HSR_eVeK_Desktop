@@ -5,9 +5,12 @@ import javafx.scene.Scene;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import javafx.scene.control.*;
+import org.hsrt.database.models.User;
+import org.hsrt.ui.controllers.LoginController;
 
 
 public class LoginScreen extends Application {
+    User User;
 
     @Override
     public void start(Stage primaryStage) {
@@ -38,8 +41,8 @@ public class LoginScreen extends Application {
         loginButton.setOnAction(event -> {
             String username = userNameField.getText();
             String password = passwordField.getText();
-            // TODO: Add authentication logic here
-            if (authenticateUser (username, password)) {
+
+            if ((User = authenticateUser(username, password)) != null) {
                 messageLabel.setText("Login successful!");
                 // Proceed to the next screen or functionality
             } else {
@@ -53,9 +56,9 @@ public class LoginScreen extends Application {
         primaryStage.show();
     }
 
-    private boolean authenticateUser (String username, String password) {
-        // Implement your authentication logic here
-        return "admin".equals(username) && "password".equals(password); // Example check
+    private User authenticateUser (String username, String password) {
+
+        return LoginController.login(username, password);
     }
 
     public static void main(String[] args) {

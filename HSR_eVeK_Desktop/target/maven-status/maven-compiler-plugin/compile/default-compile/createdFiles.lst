@@ -1,5 +1,6 @@
 org\hsrt\Main.class
 org\hsrt\ui\screens\LoginScreen.class
+org\hsrt\ui\screens\MainMenuScreen.class
 org\hsrt\database\models\Address.class
 org\hsrt\database\models\Patient.class
 org\hsrt\services\TransportDocumentService.class
