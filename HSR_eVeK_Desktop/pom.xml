@@ -5,14 +5,16 @@
     <artifactId>HSR_eVeK_Desktop</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
-        <java.version>21</java.version>
+        <java.version>22</java.version>
     </properties>
     <dependencies>
-        <!-- Jakarta Persistence API -->
+        <!-- Entities -->
         <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-            <version>3.1.0</version>
+            <groupId>HSR_eVeK_Desktop</groupId>
+            <artifactId>API_v0.2.0.jar</artifactId>
+            <version>2.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/API_v0.2.0.jar</systemPath>
         </dependency>
         <!-- Hibernate (optional für ORM) -->
         <dependency>
@@ -42,12 +44,12 @@
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-graphics</artifactId>
-                <version>21</version>
+                <version>23.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-base</artifactId>
-                <version>21</version>
+                <version>23.0.1</version>
             </dependency>
     </dependencies>
     <build>
@@ -65,6 +67,14 @@
                 </executions>
                 <configuration>
                     <mainClass>org.hsrt.ui.screens.LoginScreen</mainClass> <!-- Update with your main class -->
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>9</source>
+                    <target>9</target>
                 </configuration>
             </plugin>
         </plugins>

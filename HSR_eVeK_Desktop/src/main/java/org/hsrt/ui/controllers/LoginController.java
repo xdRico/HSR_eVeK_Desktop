@@ -1,25 +1,26 @@
 package org.hsrt.ui.controllers;
 
-import org.hsrt.config.AppConfig;
-import org.hsrt.config.SocketConfig;
-import org.hsrt.database.models.User;
-import org.hsrt.services.SocketListener;
-
-import java.io.IOException;
-import java.net.Socket;
+import de.ehealth.evek.api.entity.User;
+import de.ehealth.evek.api.type.Id;
+import de.ehealth.evek.api.type.Reference;
+import de.ehealth.evek.api.type.UserRole;
+import de.ehealth.evek.api.type.Reference;
 
 public class LoginController {
     public static User login(String username, String password) {
-        try {
-            SocketConfig socket = AppConfig.getSocketConfig();
-            socket.sendAuthentication(username, password);
-            SocketListener socketListener = new SocketListener(socket);
-            new Thread(socketListener).start();
-            socketListener.run();
-            return socketListener.getAuthenticatedUser();
+        return new User(
+        new Id<User>("userId"),
+        "lastName",
+        "firstName",
+         Reference.to("null"),
+         Reference.to("null"),
+         UserRole.SuperUser);
 
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
+         /*
+
+        return null;
+
+         */
     }
 }
