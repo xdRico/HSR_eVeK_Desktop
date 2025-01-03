@@ -1,6 +1,7 @@
 package org.hsrt.ui.screens.managementScreens;
 
 import de.ehealth.evek.api.entity.Address;
+import de.ehealth.evek.api.entity.ServiceProvider;
 import de.ehealth.evek.api.entity.User;
 import de.ehealth.evek.api.type.Reference;
 import de.ehealth.evek.api.type.UserRole;
@@ -93,17 +94,26 @@ public class UserManagement {
         gridPane.add(roleLabel, 0, 7);
         gridPane.add(roleComboBox, 1, 7);
 
-
-        // Label for ServiceProvider (auto-filled)
+        // TextField for ServiceProvider (user input)
         Label serviceProviderLabel = new Label("Service Provider:");
-        Label serviceProviderValueLabel = new Label(user.serviceProvider().toString());
+        TextField serviceProviderField = new TextField();
         gridPane.add(serviceProviderLabel, 0, 8);
-        gridPane.add(serviceProviderValueLabel, 1, 8);
+        gridPane.add(serviceProviderField, 1, 8);
+
+        // Check if the current user is a SuperUser
+        if (user.role() == UserRole.SuperUser) {
+            // Allow SuperUsers to edit the ServiceProvider field
+            serviceProviderField.setDisable(false);
+        } else {
+            // Auto-fill ServiceProvider for non-SuperUsers and disable the field
+            serviceProviderField.setText(user.serviceProvider().toString());
+            serviceProviderField.setDisable(true);
+        }
 
         // Create button
         Button createButton = new Button("Create");
+        createButton.setDisable(true); // Initially disable the button
         createButton.setOnAction(e -> {
-            // Validation and user creation logic
             String firstName = firstNameField.getText();
             String lastName = lastNameField.getText();
             String street = streetField.getText();
@@ -112,20 +122,21 @@ public class UserManagement {
             String city = cityField.getText();
             String country = countryField.getText();
             UserRole selectedRole = roleComboBox.getValue();
-
-            if (firstName.isEmpty() || lastName.isEmpty() || selectedRole == null) {
-                showAlert("Error", "All fields are required.");
-                return;
-            }
+            String serviceProvider = serviceProviderField.getText();
 
             Address address = new Address(null, null, street, houseNumber, country, postCode, city);
             Reference<Address> addressref = Reference.to(String.valueOf(address));
-            User newUser = new User(null, firstName, lastName, addressref, user.serviceProvider(), selectedRole);
+            Reference<ServiceProvider> serviceProviderReference = Reference.to(serviceProvider);
+            User newUser = new User(null, firstName, lastName, addressref, serviceProviderReference, selectedRole);
 
-            // Save user to the database or API call
             saveUser(newUser);
 
             stage.close();
+        });
+
+        // Enable the button when a role is selected
+        roleComboBox.valueProperty().addListener((obs, oldValue, newValue) -> {
+            createButton.setDisable(newValue == null);
         });
 
         VBox vbox = new VBox(10, gridPane, createButton);
@@ -140,13 +151,6 @@ public class UserManagement {
     private void saveUser(User user) {
         // Logic to save the user to the database or backend
         System.out.println("User saved: " + user);
-    }
-
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setContentText(message);
-        alert.showAndWait();
     }
 
     private List<UserRole> getAvailableRoles() {
