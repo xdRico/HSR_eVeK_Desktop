@@ -24,7 +24,7 @@ public class LoginController {
         "firstName",
          Reference.to("null"),
          serviceProviderref,
-         UserRole.HealthcareAdmin);
+         UserRole.SuperUser);
 
 
          /*

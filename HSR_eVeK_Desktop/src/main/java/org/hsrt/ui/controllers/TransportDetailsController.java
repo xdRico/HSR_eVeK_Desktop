@@ -28,11 +28,11 @@ public class TransportDetailsController {
         Reference<TransportDocument> transportDocumentReference = Reference.to(transportDocument.id().toString());
         Reference<Address> addressReference = Reference.to("address");
         Reference<Address> addressReference2 = Reference.to("address2");
-        Date date = new Date(2021, 6, 17);
+        Date date = Date.valueOf("2023-01-01");
 
         ObservableList<TransportDetails> transports = FXCollections.observableArrayList(
-                new TransportDetails(new Id<TransportDetails>("1"), transportDocumentReference,date , COptional.of(addressReference), COptional.of(addressReference2), COptional.of(Direction.Outward), COptional.of(PatientCondition.LyingDown), null, null, null, null, null, null, null),
-                new TransportDetails(new Id<TransportDetails>("2"), transportDocumentReference,date, COptional.of(addressReference2), COptional.of(addressReference), COptional.of(Direction.Return), COptional.of(PatientCondition.CarryingChair), null, null, null, null, null, null, null)
+                new TransportDetails(new Id<TransportDetails>("1"), transportDocumentReference,date , COptional.empty(), COptional.of(addressReference2), COptional.of(Direction.Outward), COptional.of(PatientCondition.LyingDown), null, null, null, null, COptional.of(date), null, COptional.of(date)),
+                new TransportDetails(new Id<TransportDetails>("2"), transportDocumentReference,date, COptional.of(addressReference2), COptional.of(addressReference), COptional.of(Direction.Return), COptional.of(PatientCondition.CarryingChair), null, null, null, null, COptional.of(date), null, COptional.of(date))
         );
 
         return transports;
@@ -57,5 +57,12 @@ public class TransportDetailsController {
         //TODO: Implement this method to fetch a transport tour from the API and add 1 to the amount of tours
 
         return "10";
+    }
+
+    public static TransportDetails createTransport(TransportDocument transportDocument, Date sqlDate) {
+        //TODO: Implement this method to create a new transport
+        TransportDetails transport = new TransportDetails(new Id<TransportDetails>("3"), Reference.to(transportDocument.id().toString()), sqlDate, COptional.empty(), COptional.empty(), COptional.empty(), COptional.empty(), null, null, null, null, COptional.empty(), null, COptional.empty());
+
+        return transport;
     }
 }

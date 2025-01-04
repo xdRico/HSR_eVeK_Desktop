@@ -21,9 +21,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import org.hsrt.ui.controllers.TransportDocumentController;
 
 import java.sql.Date;
-import java.sql.Ref;
+
 
 /**
  * This class represents the window for managing transport documents.
@@ -50,7 +51,7 @@ public class TransportDocumentManagement {
 
     public Stage createTransportDocumentManagement(User user) {
 
-        Reference<User> userReference = Reference.to(user.id().toString());
+
         Stage stage = new Stage();
         stage.setTitle("Transport Document Management");
 
@@ -59,13 +60,9 @@ public class TransportDocumentManagement {
         vbox.setAlignment(Pos.CENTER);
         vbox.setPadding(new Insets(10));
 
-        //TODO: Fetch transport documents from the API via controller
+        ObservableList<TransportDocument> transportDocuments = TransportDocumentController.getTransportDocuments(user);
 
-        ObservableList<TransportDocument> transportDocuments = FXCollections.observableArrayList(
-                new TransportDocument(new Id<TransportDocument>("1"), COptional.of(patientReference), COptional.of(insuranceDataReference), TransportReason.EmergencyTransport, Date.valueOf("2023-01-01"), null, null, null, TransportationType.KTW, null, userReference, false),
-                new TransportDocument(new Id<TransportDocument>("2"), COptional.of(patientReference),  COptional.of(insuranceDataReference), TransportReason.HighFrequent, Date.valueOf("2023-02-01"), null, null, null, TransportationType.RTW, null, userReference, false),
-                new TransportDocument(new Id<TransportDocument>("3"), COptional.of(patientReference),  COptional.of(insuranceDataReference), TransportReason.ContinuousImpairment, Date.valueOf("2023-03-01"), null, null, null, TransportationType.NAWorNEF, null, userReference, false)
-        );
+
 
         TableView<TransportDocument> tableView = new TableView<>(transportDocuments);
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -74,7 +71,7 @@ public class TransportDocumentManagement {
             row.setOnMouseClicked(event -> {
                 if (!row.isEmpty() && event.getClickCount() == 1) {
                     TransportDocument clickedDoc = row.getItem();
-                    showOptionsWindow(clickedDoc);
+                    showOptionsWindow(clickedDoc, user);
                 }
             });
             return row;
@@ -399,7 +396,7 @@ public class TransportDocumentManagement {
      * @param transportDocument The transport document for which the options should be displayed.
      */
 
-    private void showOptionsWindow(TransportDocument transportDocument) {
+    private void showOptionsWindow(TransportDocument transportDocument, User user) {
         Stage optionsStage = new Stage();
         optionsStage.setTitle("Optionen");
 
@@ -411,7 +408,7 @@ public class TransportDocumentManagement {
 
         Button createTransportButton = new Button("Transporte anzeigen und erstellen");
         createTransportButton.setOnAction(e -> {
-            Stage createTransportStage = new TransportDetailsManagement().start(transportDocument);
+            Stage createTransportStage = new TransportDetailsManagement().start(transportDocument, user);
             createTransportStage.centerOnScreen();
             createTransportStage.show();
             System.out.println("Transport wird erstellt für Dokument: " + transportDocument.id());
