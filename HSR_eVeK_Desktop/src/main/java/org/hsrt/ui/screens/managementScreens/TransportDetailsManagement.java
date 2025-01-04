@@ -201,7 +201,7 @@ public class TransportDetailsManagement {
         Label paymentExemptionLabel = new Label("Zahlungsbefreiung:");
         ComboBox<Boolean> paymentExemptionComboBox = new ComboBox<>();
         paymentExemptionComboBox.getItems().addAll(true, false);
-        paymentExemptionComboBox.setValue(existingTransport == null ? false : Boolean.valueOf(String.valueOf(existingTransport.paymentExemption())));
+        paymentExemptionComboBox.setValue(existingTransport == null ? false : Boolean.parseBoolean(String.valueOf(existingTransport.paymentExemption())));
 
         // Patient Signature
         Label patientSignatureLabel = new Label("Patientenunterschrift:");
@@ -258,7 +258,8 @@ public class TransportDetailsManagement {
 
 
 
-    private GridPane createAddressFields(String addressType, Address startAddress) {
+    private GridPane createAddressFields(String addressType, Address Address) {
+        //TODO: set the text fields to the values of the address if it is not null
         GridPane gridPane = new GridPane();
         gridPane.setAlignment(Pos.CENTER);
         gridPane.setPadding(new Insets(10));
