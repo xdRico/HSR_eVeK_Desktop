@@ -9,9 +9,17 @@ import de.ehealth.evek.api.type.Reference;
 
 public class LoginController {
     static Reference<ServiceProvider> serviceProviderref = Reference.to("tub");
+
+    /**
+     * Logs in a user with the given credentials.
+     *
+     * @param username The username of the user.
+     * @param password The password of the user.
+     * @return The logged in user or null if the login failed.
+     */
     public static User login(String username, String password) {
         return new User(
-        new Id<User>("userId"),
+        new Id<User>("1"),
         "lastName",
         "firstName",
          Reference.to("null"),

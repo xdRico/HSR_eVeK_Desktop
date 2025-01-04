@@ -3,7 +3,11 @@ C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\
 C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\network\DataHandler.java
 C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\controllers\LoginController.java
 C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\controllers\MainMenuController.java
+C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\controllers\TransportDetailsController.java
+C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\controllers\TransportDocumentController.java
+C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\controllers\UserManagementController.java
 C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\screens\LoginScreen.java
+C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\screens\managementScreens\TransportDetailsManagement.java
 C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\screens\managementScreens\TransportDocumentManagement.java
 C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\screens\managementScreens\UserManagement.java
 C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\screens\menu\HospitalMenuScreen.java

@@ -5,6 +5,12 @@ import de.ehealth.evek.api.entity.ServiceProvider;
 import de.ehealth.evek.api.entity.User;
 import de.ehealth.evek.api.type.Reference;
 import de.ehealth.evek.api.type.UserRole;
+
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import org.hsrt.ui.controllers.UserManagementController;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -15,9 +21,22 @@ import javafx.stage.Stage;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * This class represents the window for managing users.
+ * Here, users can be created, displayed, edited, and deleted.
+ */
 
 public class UserManagement {
     private User user;
+
+    /**
+     * Creates a new instance of the UserManagement.
+     *
+     * @param user The currently logged-in user.
+     */
+
 
     public Stage createUserManagement(User user) {
         this.user = user;
@@ -34,12 +53,24 @@ public class UserManagement {
             createUserStage.show();
         });
 
-        vbox.getChildren().addAll(createUser );
+        Button viewEditUsers = new Button("View/Edit Users");
+        viewEditUsers.setOnAction(e -> {
+            Stage viewEditStage = openViewEditUserWindow();
+            viewEditStage.show();
+        });
+        vbox.getChildren().addAll(createUser, viewEditUsers);
+
         Scene scene = new Scene(vbox, 800, 600);
         stage.setScene(scene);
 
         return stage;
     }
+
+    /**
+     * Opens a window for creating a new user.
+     *
+     * @return The created stage.
+     */
 
     private Stage openCreateUserWindow() {
         Stage stage = new Stage();
@@ -129,7 +160,7 @@ public class UserManagement {
             Reference<ServiceProvider> serviceProviderReference = Reference.to(serviceProvider);
             User newUser = new User(null, firstName, lastName, addressref, serviceProviderReference, selectedRole);
 
-            saveUser(newUser);
+            UserManagementController.saveUser(newUser);
 
             stage.close();
         });
@@ -148,10 +179,11 @@ public class UserManagement {
         return stage;
     }
 
-    private void saveUser(User user) {
-        // Logic to save the user to the database or backend
-        System.out.println("User saved: " + user);
-    }
+    /**
+     * Returns a list of available roles based on the current user's role.
+     *
+     * @return A list of available roles.
+     */
 
     private List<UserRole> getAvailableRoles() {
         List<UserRole> roles = null;
@@ -171,4 +203,140 @@ public class UserManagement {
         }
         return roles; // Gibt alle verfügbaren UserRoles zurück
     }
+
+    /**
+     * Opens a window for viewing and editing users.
+     *
+     * @return The created stage.
+     */
+
+    private Stage openViewEditUserWindow() {
+        Stage stage = new Stage();
+        stage.setTitle("View/Edit Users");
+
+        VBox vbox = new VBox(10);
+        vbox.setAlignment(Pos.CENTER);
+        vbox.setPadding(new Insets(10));
+
+        TableView<User> userTable = new TableView<>();
+        userTable.setItems(getFilteredUsers());
+
+        TableColumn<User, String> firstNameColumn = new TableColumn<>("First Name");
+        firstNameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().firstName()));
+        TableColumn<User, String> lastNameColumn = new TableColumn<>("Last Name");
+        lastNameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().lastName()));
+        TableColumn<User, String> roleColumn = new TableColumn<>("Role");
+        roleColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().role().toString()));
+
+        userTable.getColumns().addAll(firstNameColumn, lastNameColumn, roleColumn);
+
+        // Listener für Doppelklick auf eine Zeile
+        userTable.setRowFactory(tv -> {
+            TableRow<User> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    User selectedUser = row.getItem();
+                    Stage editUserStage = openEditUserWindow(selectedUser);
+                    editUserStage.show();
+                }
+            });
+            return row;
+        });
+
+        Button editButton = new Button("Edit Selected User");
+        editButton.setOnAction(e -> {
+            User selectedUser = userTable.getSelectionModel().getSelectedItem();
+            if (selectedUser != null) {
+                Stage editUserStage = openEditUserWindow(selectedUser);
+                editUserStage.show();
+            } else {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a user to edit.");
+                alert.showAndWait();
+            }
+        });
+
+        vbox.getChildren().addAll(userTable, editButton);
+
+        Scene scene = new Scene(vbox, 600, 400);
+        stage.setScene(scene);
+        return stage;
+    }
+
+    /**
+     * Returns a list of users based on the current user's role.
+     *
+     * @return A list of users.
+     */
+
+    private ObservableList<User> getFilteredUsers() {
+        UserManagementController controller = new UserManagementController();
+        List<User> allUsers = controller.fetchUsersFromAPI(); // Neue API-Aufruf-Methode
+
+        if (user.role() == UserRole.SuperUser) {
+            return FXCollections.observableArrayList(allUsers);
+        } else {
+            return FXCollections.observableArrayList(
+                    allUsers.stream()
+                            .filter(u -> u.serviceProvider().equals(user.serviceProvider()))
+                            .collect(Collectors.toList())
+            );
+        }
+    }
+
+    /**
+     * Opens a window for editing a user.
+     *
+     * @param userToEdit The user to edit.
+     * @return The created stage.
+     */
+
+    private Stage openEditUserWindow(User userToEdit) {
+        Stage stage = new Stage();
+        stage.setTitle("Edit User: " + userToEdit.firstName() + " " + userToEdit.lastName());
+
+        GridPane gridPane = new GridPane();
+        gridPane.setAlignment(Pos.CENTER);
+        gridPane.setPadding(new Insets(10));
+        gridPane.setHgap(10);
+        gridPane.setVgap(10);
+
+        Label firstNameLabel = new Label("First Name:");
+        TextField firstNameField = new TextField(userToEdit.firstName());
+        gridPane.add(firstNameLabel, 0, 0);
+        gridPane.add(firstNameField, 1, 0);
+
+        Label lastNameLabel = new Label("Last Name:");
+        TextField lastNameField = new TextField(userToEdit.lastName());
+        gridPane.add(lastNameLabel, 0, 1);
+        gridPane.add(lastNameField, 1, 1);
+
+        Label roleLabel = new Label("Role:");
+        ComboBox<UserRole> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll(getAvailableRoles());
+        roleComboBox.setValue(userToEdit.role());
+        gridPane.add(roleLabel, 0, 2);
+        gridPane.add(roleComboBox, 1, 2);
+
+        Button saveButton = new Button("Save");
+        saveButton.setOnAction(e -> {
+            String newFirstName = firstNameField.getText();
+            String newLastName = lastNameField.getText();
+            UserRole newRole = roleComboBox.getValue();
+
+            // Save the updated user
+            User updatedUser = userToEdit.updateWith(newLastName, newFirstName, userToEdit.address(), userToEdit.serviceProvider());
+            UserManagementController.saveUser(updatedUser);
+
+            stage.close();
+        });
+
+        VBox vbox = new VBox(10, gridPane, saveButton);
+        vbox.setAlignment(Pos.CENTER);
+        vbox.setPadding(new Insets(10));
+
+        Scene scene = new Scene(vbox, 400, 300);
+        stage.setScene(scene);
+        return stage;
+    }
+
 }
