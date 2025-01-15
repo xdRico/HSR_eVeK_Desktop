@@ -1,4 +1,5 @@
 org\hsrt\ui\screens\LoginScreen.class
+org\hsrt\ui\screens\managementScreens\InvoiceManagement.class
 org\hsrt\ui\screens\managementScreens\UserManagement$1.class
 org\hsrt\ui\screens\managementScreens\TransportDocumentManagement$1.class
 org\hsrt\ui\screens\managementScreens\UserManagement.class
