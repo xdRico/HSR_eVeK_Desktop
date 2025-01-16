@@ -319,9 +319,65 @@ public class TransportDocumentManagement {
         justificationField.textProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2));
 
         submitButton.setOnAction(e -> {
-            // TODO Logik zum Speichern des Dokuments implementieren
+            try {
+                System.out.println("Submit Button clicked");
+                // Extrahiere die Werte aus den Eingabefeldern
+                COptional<Reference<Patient>> patientOpt = COptional.of(new Reference<>(new Id<>(patientField.getText())));
+                COptional<Reference<InsuranceData>> insuranceDataOpt = COptional.ofNullable(new Reference<>(new Id<>(insuranceField.getText())));
 
-            stage.close();
+                // Extrahiere den Transportgrund aus dem ToggleGroup
+                TransportReason transportReason = switch (reasonGroup.getSelectedToggle()) {
+                    case RadioButton b when b == emergencyTransport -> TransportReason.EmergencyTransport;
+                    case RadioButton b when b == inpatientTreatment -> TransportReason.FullPartStationary;
+                    case RadioButton b when b == prePostTreatment -> TransportReason.PrePostStationary;
+                    case RadioButton b when b == outpatientTreatment -> TransportReason.AmbulantTaxi;
+                    case RadioButton b when b == otherReason1 -> TransportReason.OtherPermitFree;
+                    case RadioButton b when b == frequentTreatment -> TransportReason.HighFrequent;
+                    case RadioButton b when b == exceptionalCase -> TransportReason.HighFrequentAlike;
+                    case RadioButton b when b == permanentImpairment -> TransportReason.ContinuousImpairment;
+                    case RadioButton b when b == otherReason2 -> TransportReason.OtherKTW;
+                        default -> throw new IllegalStateException("Unexpected transport reason");
+                };
+
+                Date startDate = Date.valueOf(treatmentDatePicker.getValue());
+                COptional<Date> endDateOpt = endDatePicker.getValue() != null ?
+                        COptional.of(Date.valueOf(endDatePicker.getValue())) : COptional.empty();
+
+                COptional<Integer> weeklyFrequencyOpt = !weeklyTripsField.getText().isEmpty() ?
+                        COptional.of(Integer.parseInt(weeklyTripsField.getText())) : COptional.empty();
+
+                Reference<ServiceProvider> healthcareServiceProvider = new Reference<>(new Id<>(treatmentFacilityField.getText()));
+
+                // Extrahiere den Transporttyp aus der ToggleGroup
+                TransportationType transportationType = switch (transportTypeGroup.getSelectedToggle()) {
+                    case RadioButton b when b == taxi -> TransportationType.Taxi;
+                    case RadioButton b when b == ktw -> TransportationType.KTW;
+                    case RadioButton b when b == rtw -> TransportationType.RTW;
+                    case RadioButton b when b == naw -> TransportationType.NAWorNEF;
+                    case RadioButton b when b == otherTransport -> TransportationType.Other;
+                        default -> throw new IllegalStateException("Unexpected transportation type");
+                };
+
+                COptional<String> additionalInfoOpt = !justificationField.getText().isEmpty() ?
+                        COptional.of(justificationField.getText()) : COptional.empty();
+
+                // Rufe die createTransportDocument-Methode auf
+                TransportDocument newDocument = TransportDocumentController.createTransportDocument(
+                        patientOpt, insuranceDataOpt, transportReason, startDate, endDateOpt,
+                        weeklyFrequencyOpt, healthcareServiceProvider, transportationType, additionalInfoOpt
+                );
+
+                // Feedback für den Benutzer
+                Alert successAlert = new Alert(Alert.AlertType.INFORMATION,
+                        "Das Transportdokument wurde erfolgreich erstellt mit ID: " + newDocument.id());
+                successAlert.showAndWait();
+                stage.close();
+
+            } catch (Exception ex) {
+                Alert errorAlert = new Alert(Alert.AlertType.ERROR,
+                        "Fehler beim Erstellen des Transportdokuments: " + ex.getMessage());
+                errorAlert.showAndWait();
+            }
         });
 
         root.getChildren().addAll(

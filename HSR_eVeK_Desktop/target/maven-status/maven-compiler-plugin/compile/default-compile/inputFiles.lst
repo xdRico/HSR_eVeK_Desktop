@@ -1,6 +1,7 @@
-C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\backend\config\AppConfig.java
-C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\backend\config\SocketConfig.java
+C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\network\config\SocketConfig.java
 C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\network\DataHandler.java
+C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\network\IsInitializedListener.java
+C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\network\ServerConnection.java
 C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\controllers\LoginController.java
 C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\controllers\MainMenuController.java
 C:\Users\lenna\IdeaProjects\HSR_eVeK_Desktop\HSR_eVeK_Desktop\src\main\java\org\hsrt\ui\controllers\TransportDetailsController.java

@@ -11,10 +11,10 @@
         <!-- Entities -->
         <dependency>
             <groupId>HSR_eVeK_Desktop</groupId>
-            <artifactId>API_v0.2.0.jar</artifactId>
-            <version>2.0</version>
+            <artifactId>API_v0.2.3.jar</artifactId>
+            <version>2.3</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/lib/API_v0.2.0.jar</systemPath>
+            <systemPath>${project.basedir}/lib/API_v0.2.3.jar</systemPath>
         </dependency>
         <!-- Hibernate (optional für ORM) -->
         <dependency>
@@ -29,6 +29,7 @@
             <version>5.10.0</version>
             <scope>test</scope>
         </dependency>
+
 
         <!-- JavaFX Modules -->
             <dependency>
@@ -67,6 +68,12 @@
             <version>20</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version> <!-- Replace with the required version -->
+        </dependency>
+
 
     </dependencies>
     <build>
@@ -90,8 +97,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>16</source>
-                    <target>16</target>
+                    <source>21</source>
+                    <target>21</target>
                 </configuration>
             </plugin>
         </plugins>

@@ -24,6 +24,8 @@ public class TransportDetailsController {
      * @return A list of all transports.
      */
     public static ObservableList<TransportDetails> getTransports(TransportDocument transportDocument) {
+
+
         //TODO: Implement this method to fetch transports from the API
         Reference<TransportDocument> transportDocumentReference = Reference.to(transportDocument.id().toString());
         Reference<Address> addressReference = Reference.to("address");

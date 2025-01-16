@@ -11,6 +11,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
 import javafx.scene.control.*;
+import org.hsrt.network.DataHandler;
 import org.hsrt.ui.controllers.LoginController;
 import org.hsrt.ui.screens.menu.HospitalMenuScreen;
 import org.hsrt.ui.screens.menu.InsuranceMenuScreen;
@@ -99,8 +100,8 @@ public class LoginScreen extends Application {
         primaryStage.show();
     }
 
-    private User authenticateUser(String username, String password) {
-        return LoginController.login(username, password);
+    private User authenticateUser( String username, String password) {
+        return LoginController.login( username, password);
     }
 
     public static void main(String[] args) {
