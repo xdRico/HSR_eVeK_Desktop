@@ -122,12 +122,14 @@ public class TransportDocumentManagement {
                 new SimpleStringProperty(data.getValue().startDate() != null ? data.getValue().startDate().toString() : "N/A"));
 
         TableColumn<TransportDocument, String> endDateColumn = new TableColumn<>("End Date");
-        endDateColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().endDate() != null ? data.getValue().endDate().toString() : "N/A"));
+        endDateColumn.setCellValueFactory(data -> {
+            var endDateOptional = data.getValue().endDate();
+            return new SimpleStringProperty(!data.getValue().endDate().equals(COptional.empty()) ? endDateOptional.get().toString() : "N/A");});
 
         TableColumn<TransportDocument, String> weeklyFrequencyColumn = new TableColumn<>("Weekly Frequency");
-        weeklyFrequencyColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().weeklyFrequency() != null ? data.getValue().weeklyFrequency().toString() : "N/A"));
+        weeklyFrequencyColumn.setCellValueFactory(data ->{
+            var weeklyFrequencyOptional = data.getValue().weeklyFrequency();
+            return new SimpleStringProperty(!data.getValue().weeklyFrequency().equals(COptional.empty()) ? weeklyFrequencyOptional.get().toString() : "N/A");});
 
         TableColumn<TransportDocument, String> serviceProviderColumn = new TableColumn<>("Service Provider");
         serviceProviderColumn.setCellValueFactory(data ->
@@ -313,10 +315,18 @@ public class TransportDocumentManagement {
         submitButton.setDisable(true);
 
         // Enable button only if required fields are filled
-        reasonGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2));
-        treatmentDatePicker.valueProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2));
-        transportTypeGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2));
-        justificationField.textProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2));
+        reasonGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker ));
+        treatmentDatePicker.valueProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker));
+        transportTypeGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker));
+        justificationField.textProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker));
+        weeklyTripsField.textProperty().addListener((observable, oldValue, newValue) ->
+                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker)
+        );
+
+        endDatePicker.valueProperty().addListener((observable, oldValue, newValue) ->
+                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker)
+        );
+
 
         submitButton.setOnAction(e -> {
             try {
@@ -427,22 +437,42 @@ public class TransportDocumentManagement {
      * @param otherReason2       The radio button for other reasons.
      */
 
-    private void checkFormCompletion(Button submitButton, ToggleGroup reasonGroup, DatePicker treatmentDatePicker, ToggleGroup transportTypeGroup, TextArea justificationField, RadioButton ktw, RadioButton otherTransport, RadioButton exceptionalCase, RadioButton permanentImpairment, RadioButton otherReason2) {
+    private void checkFormCompletion(
+            Button submitButton,
+            ToggleGroup reasonGroup,
+            DatePicker treatmentDatePicker,
+            ToggleGroup transportTypeGroup,
+            TextArea justificationField,
+            RadioButton ktw,
+            RadioButton otherTransport,
+            RadioButton exceptionalCase,
+            RadioButton permanentImpairment,
+            RadioButton otherReason2,
+            TextField weeklyTripsField,
+            DatePicker endDatePicker
+    ) {
         boolean isReasonSelected = reasonGroup.getSelectedToggle() != null;
         boolean isStartDateSelected = treatmentDatePicker.getValue() != null;
         boolean isTransportTypeSelected = transportTypeGroup.getSelectedToggle() != null;
+
+        // Weekly Frequency validation
+        boolean isWeeklyFrequencyEntered = !weeklyTripsField.getText().trim().isEmpty();
+        boolean isEndDateProvided = endDatePicker.getValue() != null;
 
         // Check if justification is required for selected transport type or reason
         boolean isJustificationRequired = (transportTypeGroup.getSelectedToggle() == ktw || transportTypeGroup.getSelectedToggle() == otherTransport
                 || reasonGroup.getSelectedToggle() == exceptionalCase || reasonGroup.getSelectedToggle() == permanentImpairment || reasonGroup.getSelectedToggle() == otherReason2);
         boolean isJustificationProvided = !justificationField.getText().trim().isEmpty();
 
+        boolean isWeeklyFrequencyValid = !isWeeklyFrequencyEntered || isEndDateProvided;
+
         if (isJustificationRequired) {
-            submitButton.setDisable(!(isReasonSelected && isStartDateSelected && isTransportTypeSelected && isJustificationProvided));
+            submitButton.setDisable(!(isReasonSelected && isStartDateSelected && isTransportTypeSelected && isJustificationProvided && isWeeklyFrequencyValid));
         } else {
-            submitButton.setDisable(!(isReasonSelected && isStartDateSelected && isTransportTypeSelected));
+            submitButton.setDisable(!(isReasonSelected && isStartDateSelected && isTransportTypeSelected && isWeeklyFrequencyValid));
         }
     }
+
 
     /**
      * Displays a window with options for a transport document.

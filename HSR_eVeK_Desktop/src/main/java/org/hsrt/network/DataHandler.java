@@ -120,14 +120,15 @@ public class DataHandler implements IsInitializedListener {
                 "AdditionalInfo: " + additionalInfo +
                 "LoggedInUser: " + loggedInUser);
 
-        //TODO find out why this is not working
 
         try{
             TransportDocument.Create cmd = new TransportDocument.Create(patient, insuranceData, transportReason, startDate, endDate,
-                    weeklyFrequency, healthcareServiceProvider,transportationType, additionalInfo, Reference.to(loggedInUser.id()));
+                    weeklyFrequency, healthcareServiceProvider,transportationType, additionalInfo, Reference.to(loggedInUser.id().value()));
             sender.sendTransportDocument(cmd);
             System.out.println("Transport Document sent");
-            TransportDocument created = receiver.receiveTransportDocument();
+            TransportDocument created = null;
+            created = receiver.receiveTransportDocument();
+            System.out.println("Transport Document received");
             addTransportDocument(created);
             return created;
         }catch(Exception e){

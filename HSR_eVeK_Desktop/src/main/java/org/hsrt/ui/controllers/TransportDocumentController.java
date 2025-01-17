@@ -60,7 +60,7 @@ public class TransportDocumentController {
     }
 
     public static TransportDocument createTransportDocument(COptional<Reference<Patient>> patientOpt, COptional<Reference<InsuranceData>> insuranceDataOpt, TransportReason transportReason, Date startDate, COptional<Date> endDateOpt, COptional<Integer> weeklyFrequencyOpt, Reference<ServiceProvider> healthcareServiceProvider, TransportationType transportationType, COptional<String> additionalInfoOpt) {
-        DataHandler dataHandler = new DataHandler();
+        DataHandler dataHandler = DataHandler.instance();
         // Initialisiere die Serververbindung
         dataHandler.initServerConnection();
 
