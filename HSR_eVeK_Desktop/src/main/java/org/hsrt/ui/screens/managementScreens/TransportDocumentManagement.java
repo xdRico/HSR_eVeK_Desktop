@@ -10,15 +10,14 @@ import de.ehealth.evek.api.type.Reference;
 import de.ehealth.evek.api.type.TransportReason;
 import de.ehealth.evek.api.util.COptional;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.hsrt.ui.controllers.TransportDocumentController;
@@ -215,7 +214,7 @@ public class TransportDocumentManagement {
         RadioButton frequentTreatment = new RadioButton("d1) hochfrequente Behandlung (Dialyse, Onkol-, Chemo- oder Strahlentherapie)");
         RadioButton exceptionalCase = new RadioButton("d2) vergleichbarer Ausnahmefall (wie d1, Begründung unter 4. erforderlich)");
         RadioButton permanentImpairment = new RadioButton("e) dauerhafte Mobilitätsbeeinträchtigung vergleichbar mit b und Behandlungsdauer mindestens 6 Monate (Begründung unter 4. erforderlich)");
-        RadioButton otherReason2 = new RadioButton("f) anderer Grund für fahrt mit KTW (z.B. fachgerechtes Lagern, Tragen, Heben erforderlich, Begründung unter 3. und ggf 4. erforderlich)");
+        RadioButton otherReason2 = new RadioButton("f) anderer Grund für fahrt mit KTW (z.B. fachgerechtes Lagern, Tragen, Heben erforderlich, Begründung ggf unter 4. erforderlich)");
 
         emergencyTransport.setToggleGroup(reasonGroup);
         inpatientTreatment.setToggleGroup(reasonGroup);
@@ -300,6 +299,7 @@ public class TransportDocumentManagement {
             }
         }
 
+
         VBox transportTypeBox = new VBox(5, transportTypeLabel, taxi, ktw, rtw, naw, otherTransport);
 
         // Begründung/Sonstiges
@@ -310,21 +310,26 @@ public class TransportDocumentManagement {
             justificationField.setText(String.valueOf(existingDocument.additionalInfo()));
         }
 
+        Text errorLabel = new Text();
+        errorLabel.setFill(Color.RED); // Fehlertext in Rot
+        errorLabel.setVisible(false); // Standardmäßig ausgeblendet
+
+
         // Submit Button
         Button submitButton = new Button(existingDocument == null ? "Erstellen" : "Speichern");
         submitButton.setDisable(true);
 
         // Enable button only if required fields are filled
-        reasonGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker ));
-        treatmentDatePicker.valueProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker));
-        transportTypeGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker));
-        justificationField.textProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker));
+        reasonGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField));
+        treatmentDatePicker.valueProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField));
+        transportTypeGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField));
+        justificationField.textProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField));
         weeklyTripsField.textProperty().addListener((observable, oldValue, newValue) ->
-                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker)
+                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField)
         );
 
         endDatePicker.valueProperty().addListener((observable, oldValue, newValue) ->
-                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker)
+                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField)
         );
 
 
@@ -396,6 +401,7 @@ public class TransportDocumentManagement {
                 treatmentBox,
                 transportTypeBox,
                 justificationLabel, justificationField,
+                errorLabel,
                 submitButton
         );
 
@@ -425,16 +431,20 @@ public class TransportDocumentManagement {
     /**
      * Checks if all required fields are filled and enables the submit button accordingly.
      *
-     * @param submitButton      The submit button to enable or disable.
-     * @param reasonGroup       The toggle group for the transport reason.
-     * @param treatmentDatePicker The date picker for the treatment start date.
-     * @param transportTypeGroup The toggle group for the transport type.
-     * @param justificationField The text area for the justification.
-     * @param ktw               The radio button for KTW transport.
-     * @param otherTransport     The radio button for other transport types.
-     * @param exceptionalCase    The radio button for exceptional cases.
-     * @param permanentImpairment The radio button for permanent impairments.
-     * @param otherReason2       The radio button for other reasons.
+     * @param submitButton           The submit button to enable or disable.
+     * @param reasonGroup            The toggle group for the transport reason.
+     * @param treatmentDatePicker    The date picker for the treatment start date.
+     * @param transportTypeGroup     The toggle group for the transport type.
+     * @param justificationField     The text area for the justification.
+     * @param ktw                    The radio button for KTW transport.
+     * @param otherTransport         The radio button for other transport types.
+     * @param exceptionalCase        The radio button for exceptional cases.
+     * @param permanentImpairment    The radio button for permanent impairments.
+     * @param otherReason2           The radio button for other reasons.
+     * @param weeklyTripsField       The text field for the weekly trips.
+     * @param endDatePicker          The date picker for the treatment end date.
+     * @param errorLabel             The label for displaying error messages.
+     * @param treatmentFacilityField
      */
 
     private void checkFormCompletion(
@@ -449,29 +459,62 @@ public class TransportDocumentManagement {
             RadioButton permanentImpairment,
             RadioButton otherReason2,
             TextField weeklyTripsField,
-            DatePicker endDatePicker
-    ) {
+            DatePicker endDatePicker,
+            Text errorLabel,
+            TextField treatmentFacilityField) {
         boolean isReasonSelected = reasonGroup.getSelectedToggle() != null;
         boolean isStartDateSelected = treatmentDatePicker.getValue() != null;
         boolean isTransportTypeSelected = transportTypeGroup.getSelectedToggle() != null;
 
         // Weekly Frequency validation
-        boolean isWeeklyFrequencyEntered = !weeklyTripsField.getText().trim().isEmpty();
         boolean isEndDateProvided = endDatePicker.getValue() != null;
+        boolean isWeeklyFrequencyEntered = !weeklyTripsField.getText().trim().isEmpty();
+        boolean isWeeklyFrequencyValid = !isEndDateProvided || isWeeklyFrequencyEntered;
+
+        //Treatment Facility validation
+        boolean isTreatmentFacilityEntered = !treatmentFacilityField.getText().trim().isEmpty();
 
         // Check if justification is required for selected transport type or reason
-        boolean isJustificationRequired = (transportTypeGroup.getSelectedToggle() == ktw || transportTypeGroup.getSelectedToggle() == otherTransport
+        boolean isJustificationRequired = (transportTypeGroup.getSelectedToggle() == ktw
                 || reasonGroup.getSelectedToggle() == exceptionalCase || reasonGroup.getSelectedToggle() == permanentImpairment || reasonGroup.getSelectedToggle() == otherReason2);
         boolean isJustificationProvided = !justificationField.getText().trim().isEmpty();
 
-        boolean isWeeklyFrequencyValid = !isWeeklyFrequencyEntered || isEndDateProvided;
+        // Dynamische Fehlermeldung
+        StringBuilder errorMessage = new StringBuilder();
 
-        if (isJustificationRequired) {
-            submitButton.setDisable(!(isReasonSelected && isStartDateSelected && isTransportTypeSelected && isJustificationProvided && isWeeklyFrequencyValid));
-        } else {
-            submitButton.setDisable(!(isReasonSelected && isStartDateSelected && isTransportTypeSelected && isWeeklyFrequencyValid));
+        if (!isReasonSelected) errorMessage.append("Bitte wählen Sie einen Grund der Beförderung aus.\n");
+        if (!isStartDateSelected) errorMessage.append("Bitte wählen Sie ein Startdatum aus.\n");
+        if (!isTreatmentFacilityEntered) errorMessage.append("Bitte geben Sie ein Behandlungsstättenkürzel ein.\n");
+        if (!isTransportTypeSelected) errorMessage.append("Bitte wählen Sie eine Beförderungsart aus.\n");
+        if (isEndDateProvided && !isWeeklyFrequencyEntered) errorMessage.append("Bitte geben Sie die Anzahl der Fahrten pro Woche ein, wenn ein Enddatum gesetzt ist.\n");
+        if (isWeeklyFrequencyEntered && !isEndDateProvided) errorMessage.append("Bitte setzen Sie ein Enddatum, wenn die Anzahl der Fahrten pro Woche eingetragen ist.\n");
+        if (isJustificationRequired && !isJustificationProvided) errorMessage.append("Bitte geben Sie eine Begründung ein.\n");
+
+        errorLabel.setText(errorMessage.toString());
+        errorLabel.setVisible(!errorMessage.isEmpty());
+
+        // Visuelle Hervorhebung für Felder
+        treatmentDatePicker.setStyle(isStartDateSelected ? "-fx-border-color: none;" : "-fx-border-color: red;");
+        endDatePicker.setStyle(!isEndDateProvided && isWeeklyFrequencyEntered ? "-fx-border-color: red;" : "-fx-border-color: none;");
+        weeklyTripsField.setStyle(isWeeklyFrequencyValid ? "-fx-border-color: none;" : "-fx-border-color: red;");
+        justificationField.setStyle(isJustificationRequired && !isJustificationProvided ? "-fx-border-color: red;" : "-fx-border-color: none;");
+        treatmentFacilityField.setStyle(isTreatmentFacilityEntered ? "-fx-border-color: none;" : "-fx-border-color: red;");
+
+        // Visuelle Hervorhebung für RadioButtons
+        for (Toggle toggle : reasonGroup.getToggles()) {
+            ((RadioButton) toggle).setStyle(isReasonSelected ? "-fx-border-color: none;" : "-fx-border-color: red;");
         }
+        for (Toggle toggle : transportTypeGroup.getToggles()) {
+            ((RadioButton) toggle).setStyle(isTransportTypeSelected ? "-fx-border-color: none;" : "-fx-border-color: red;");
+        }
+        if(reasonGroup.getSelectedToggle() == otherReason2){
+            transportTypeGroup.selectToggle(ktw);
+        }
+
+        submitButton.setDisable(!errorMessage.isEmpty());
     }
+
+
 
 
     /**
