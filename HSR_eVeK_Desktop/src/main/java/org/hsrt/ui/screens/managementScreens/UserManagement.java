@@ -83,53 +83,64 @@ public class UserManagement {
         gridPane.setVgap(10);
 
         // Input fields for user details
+        Label userNameLabel = new Label("Username:");
+        TextField userNameField = new TextField();
+        gridPane.add(userNameLabel, 0, 0);
+        gridPane.add(userNameField, 1, 0);
+
+        Label passwordLabel = new Label("Password:");
+        PasswordField passwordField = new PasswordField();
+        gridPane.add(passwordLabel, 0, 1);
+        gridPane.add(passwordField, 1, 1);
+
+
         Label firstNameLabel = new Label("First Name:");
         TextField firstNameField = new TextField();
-        gridPane.add(firstNameLabel, 0, 0);
-        gridPane.add(firstNameField, 1, 0);
+        gridPane.add(firstNameLabel, 0, 2);
+        gridPane.add(firstNameField, 1, 2);
 
         Label lastNameLabel = new Label("Last Name:");
         TextField lastNameField = new TextField();
-        gridPane.add(lastNameLabel, 0, 1);
-        gridPane.add(lastNameField, 1, 1);
+        gridPane.add(lastNameLabel, 0, 3);
+        gridPane.add(lastNameField, 1, 3);
 
         Label streetLabel = new Label("Street:");
         TextField streetField = new TextField();
-        gridPane.add(streetLabel, 0, 2);
-        gridPane.add(streetField, 1, 2);
+        gridPane.add(streetLabel, 0, 4);
+        gridPane.add(streetField, 1, 4);
 
         Label houseNumberLabel = new Label("House Number:");
         TextField houseNumberField = new TextField();
-        gridPane.add(houseNumberLabel, 0, 3);
-        gridPane.add(houseNumberField, 1, 3);
+        gridPane.add(houseNumberLabel, 0, 5);
+        gridPane.add(houseNumberField, 1, 5);
 
         Label postCodeLabel = new Label("Post Code:");
         TextField postCodeField = new TextField();
-        gridPane.add(postCodeLabel, 0, 4);
-        gridPane.add(postCodeField, 1, 4);
+        gridPane.add(postCodeLabel, 0, 6);
+        gridPane.add(postCodeField, 1, 6);
 
         Label cityLabel = new Label("City:");
         TextField cityField = new TextField();
-        gridPane.add(cityLabel, 0, 5);
-        gridPane.add(cityField, 1, 5);
+        gridPane.add(cityLabel, 0, 7);
+        gridPane.add(cityField, 1, 7);
 
         Label countryLabel = new Label("Country:");
         TextField countryField = new TextField();
-        gridPane.add(countryLabel, 0, 6);
-        gridPane.add(countryField, 1, 6);
+        gridPane.add(countryLabel, 0, 8);
+        gridPane.add(countryField, 1, 8);
 
         // Dropdown for role selection
         Label roleLabel = new Label("Role:");
         ComboBox<UserRole> roleComboBox = new ComboBox<>();
         roleComboBox.getItems().addAll(getAvailableRoles());
-        gridPane.add(roleLabel, 0, 7);
-        gridPane.add(roleComboBox, 1, 7);
+        gridPane.add(roleLabel, 0, 9);
+        gridPane.add(roleComboBox, 1, 9);
 
         // TextField for ServiceProvider (user input)
         Label serviceProviderLabel = new Label("Service Provider:");
         TextField serviceProviderField = new TextField();
-        gridPane.add(serviceProviderLabel, 0, 8);
-        gridPane.add(serviceProviderField, 1, 8);
+        gridPane.add(serviceProviderLabel, 0, 10);
+        gridPane.add(serviceProviderField, 1, 10);
 
         // Check if the current user is a SuperUser
         if (user.role() == UserRole.SuperUser) {
@@ -145,6 +156,8 @@ public class UserManagement {
         Button createButton = new Button("Create");
         createButton.setDisable(true); // Initially disable the button
         createButton.setOnAction(e -> {
+            String username = userNameField.getText();
+            String password = passwordField.getText();
             String firstName = firstNameField.getText();
             String lastName = lastNameField.getText();
             String street = streetField.getText();
@@ -160,6 +173,7 @@ public class UserManagement {
             Reference<ServiceProvider> serviceProviderReference = Reference.to(serviceProvider);
             User newUser = new User(null, firstName, lastName, addressref, serviceProviderReference, selectedRole);
 
+            //TODO fix this mess
             UserManagementController.saveUser(newUser);
 
             stage.close();

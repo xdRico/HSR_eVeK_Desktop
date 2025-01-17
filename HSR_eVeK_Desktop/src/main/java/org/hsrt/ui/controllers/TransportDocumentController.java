@@ -83,4 +83,27 @@ public class TransportDocumentController {
         return transportDocument;
     }
 
+    public static TransportDocument updateTransportDocument(Id<TransportDocument> id, COptional<Reference<Patient>> patientOpt, COptional<Reference<InsuranceData>> insuranceDataOpt, TransportReason transportReason, Date startDate, COptional<Date> endDateOpt, COptional<Integer> weeklyFrequencyOpt, Reference<ServiceProvider> healthcareServiceProvider, TransportationType transportationType, COptional<String> additionalInfoOpt) {
+        DataHandler dataHandler = DataHandler.instance();
+        // Initialisiere die Serververbindung
+        dataHandler.initServerConnection();
+
+        // Warte, bis die Verbindung initialisiert ist
+        while (!dataHandler.isInitialized()) {
+            try {
+                Thread.sleep(100); // Warte 100ms
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        TransportDocument transportDocument = null;
+
+        try {
+            transportDocument = dataHandler.updateTransportDocument(id, patientOpt, insuranceDataOpt, transportReason, startDate, endDateOpt, weeklyFrequencyOpt, healthcareServiceProvider, transportationType, additionalInfoOpt);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return transportDocument;
+    }
 }

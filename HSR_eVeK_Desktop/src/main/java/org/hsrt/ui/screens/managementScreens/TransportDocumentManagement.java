@@ -139,8 +139,10 @@ public class TransportDocumentManagement {
                 new SimpleStringProperty(data.getValue().transportationType() != null ? data.getValue().transportationType().toString() : "N/A"));
 
         TableColumn<TransportDocument, String> additionalInfoColumn = new TableColumn<>("Additional Info");
-        additionalInfoColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().additionalInfo() != null ? data.getValue().additionalInfo().toString() : "N/A"));
+        additionalInfoColumn.setCellValueFactory(data ->{
+            var additionalInfoOptional = data.getValue().additionalInfo();
+            return new SimpleStringProperty(!data.getValue().additionalInfo().equals(COptional.empty()) ? additionalInfoOptional.get().toString() : "N/A");});
+
 
         TableColumn<TransportDocument, String> signatureColumn = new TableColumn<>("Signature");
         signatureColumn.setCellValueFactory(data ->
@@ -256,7 +258,7 @@ public class TransportDocumentManagement {
         DatePicker endDatePicker = new DatePicker();
         endDateBox.getChildren().addAll(endDateLabel, endDatePicker);
         if (existingDocument != null && existingDocument.endDate() != null) {
-            endDatePicker.setValue(existingDocument.startDate().toLocalDate());
+            endDatePicker.setValue(existingDocument.endDate().isPresent() ? existingDocument.endDate().get().toLocalDate() : null);
         }
 
         TextField treatmentFacilityField = new TextField();
@@ -268,7 +270,7 @@ public class TransportDocumentManagement {
         TextField weeklyTripsField = new TextField();
         weeklyTripsField.setPromptText("Fahrten pro Woche");
         if(existingDocument != null && existingDocument.weeklyFrequency() != null) {
-            weeklyTripsField.setText(existingDocument.weeklyFrequency().toString());
+            weeklyTripsField.setText(existingDocument.weeklyFrequency().isPresent() ? existingDocument.weeklyFrequency().get().toString() : null);
         }
 
         VBox treatmentBox = new VBox(5, treatmentLabel, startDateBox, endDateBox, treatmentFacilityField, weeklyTripsField);
@@ -307,7 +309,7 @@ public class TransportDocumentManagement {
         TextArea justificationField = new TextArea();
         justificationField.setPromptText("Weitere Informationen eingeben");
         if (existingDocument != null && existingDocument.additionalInfo() != null) {
-            justificationField.setText(String.valueOf(existingDocument.additionalInfo()));
+            justificationField.setText(String.valueOf(existingDocument.additionalInfo().isPresent() ? existingDocument.additionalInfo().get() : null));
         }
 
         Text errorLabel = new Text();
@@ -376,11 +378,28 @@ public class TransportDocumentManagement {
                 COptional<String> additionalInfoOpt = !justificationField.getText().isEmpty() ?
                         COptional.of(justificationField.getText()) : COptional.empty();
 
+                TransportDocument newDocument = null;
+
                 // Rufe die createTransportDocument-Methode auf
-                TransportDocument newDocument = TransportDocumentController.createTransportDocument(
-                        patientOpt, insuranceDataOpt, transportReason, startDate, endDateOpt,
-                        weeklyFrequencyOpt, healthcareServiceProvider, transportationType, additionalInfoOpt
-                );
+                if(existingDocument != null) {
+                    newDocument = TransportDocumentController.updateTransportDocument(
+                            existingDocument.id(),
+                            patientOpt,
+                            insuranceDataOpt,
+                            transportReason,
+                            startDate,
+                            endDateOpt,
+                            weeklyFrequencyOpt,
+                            healthcareServiceProvider,
+                            transportationType,
+                            additionalInfoOpt
+                    );
+                }else {
+                    newDocument = TransportDocumentController.createTransportDocument(
+                            patientOpt, insuranceDataOpt, transportReason, startDate, endDateOpt,
+                            weeklyFrequencyOpt, healthcareServiceProvider, transportationType, additionalInfoOpt
+                    );
+                }
 
                 // Feedback für den Benutzer
                 Alert successAlert = new Alert(Alert.AlertType.INFORMATION,

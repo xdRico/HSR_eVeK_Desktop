@@ -172,6 +172,19 @@ public class DataHandler implements IsInitializedListener {
             throw new ProcessingException(e);
         }
     }
+
+    public TransportDocument updateTransportDocument(Id<TransportDocument> id, COptional<Reference<Patient>> patientOpt, COptional<Reference<InsuranceData>> insuranceDataOpt, TransportReason transportReason, Date startDate, COptional<Date> endDateOpt, COptional<Integer> weeklyFrequencyOpt, Reference<ServiceProvider> healthcareServiceProvider, TransportationType transportationType, COptional<String> additionalInfoOpt) {
+        try {
+            TransportDocument.Update cmd = new TransportDocument.Update(id, transportReason, startDate, endDateOpt, weeklyFrequencyOpt, healthcareServiceProvider, transportationType, additionalInfoOpt, Reference.to(loggedInUser.id()));
+            //TODO Check if InsuranceData and Patient are changed
+            sender.sendTransportDocument(cmd);
+            TransportDocument updated = receiver.receiveTransportDocument();
+            return updated;
+        }catch(Exception e){
+            Log.sendException(e);
+            return null;
+        }
+    }
     //endregion
 
 
