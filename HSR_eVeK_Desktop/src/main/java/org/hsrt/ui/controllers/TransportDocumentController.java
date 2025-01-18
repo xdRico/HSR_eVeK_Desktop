@@ -106,4 +106,28 @@ public class TransportDocumentController {
         }
         return transportDocument;
     }
+
+    public static String getInsuranceData(String patientNumber) {
+        DataHandler dataHandler = DataHandler.instance();
+        // Initialisiere die Serververbindung
+        dataHandler.initServerConnection();
+
+        // Warte, bis die Verbindung initialisiert ist
+        while (!dataHandler.isInitialized()) {
+            try {
+                Thread.sleep(100); // Warte 100ms
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        String insuranceData = null;
+
+        try {
+            insuranceData = dataHandler.getInsuranceData(patientNumber);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return insuranceData;
+    }
 }

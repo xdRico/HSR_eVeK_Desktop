@@ -1,11 +1,11 @@
 package org.hsrt.ui.screens.managementScreens;
 
 import de.ehealth.evek.api.entity.*;
-import de.ehealth.evek.api.type.Direction;
-import de.ehealth.evek.api.type.PatientCondition;
-import de.ehealth.evek.api.type.Reference;
-import de.ehealth.evek.api.type.UserRole;
+import de.ehealth.evek.api.type.*;
 import de.ehealth.evek.api.util.COptional;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.collections.ObservableList;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Text;
@@ -27,19 +27,13 @@ import javafx.scene.image.Image;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.qrcode.QRCodeWriter;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
-import javafx.geometry.Insets;
-import javafx.scene.Scene;
+
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
-import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 
 import java.sql.Date;
 import java.time.LocalDate;
@@ -56,6 +50,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 public class TransportDetailsManagement {
+    private ObservableList<TransportDetails> transports;
+
     public Stage start(TransportDocument transportDocument, User user) {
         Stage stage = new Stage();
         VBox vbox = createMainLayout(transportDocument, user);
@@ -75,7 +71,8 @@ public class TransportDetailsManagement {
     }
 
     private TableView<TransportDetails> createTransportTable(TransportDocument transportDocument, User user) {
-        TableView<TransportDetails> tableView = new TableView<>(TransportDetailsController.getTransports(transportDocument));
+        transports = TransportDetailsController.getTransports(transportDocument);
+        TableView<TransportDetails> tableView = new TableView<>(transports);
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         tableView.setRowFactory(tv -> createTableRow(transportDocument, user));
         addColumnsToTableView(tableView);
@@ -98,7 +95,7 @@ public class TransportDetailsManagement {
         createButton.setOnAction(e -> {
             Stage creationStage = createTransport(transportDocument, user);
             creationStage.showAndWait();
-            tableView.setItems(TransportDetailsController.getTransports(transportDocument));
+            tableView.setItems(transports);
         });
         return createButton;
     }
@@ -149,6 +146,7 @@ public class TransportDetailsManagement {
 
                 // Close the stage after saving
                 Stage stage = (Stage) saveButton.getScene().getWindow();
+                transports = TransportDetailsController.getTransports(transportDocument);
                 stage.close();
             } else {
                 System.out.println("No date selected. Transport not saved.");
@@ -193,6 +191,7 @@ public class TransportDetailsManagement {
             );
         });
 
+        //noinspection unchecked
         tableView.getColumns().addAll(idColumn, dateColumn, startAddressColumn, endAddressColumn);
     }
 
@@ -327,15 +326,12 @@ public class TransportDetailsManagement {
 
 
         // Start Address Pane
-        Reference<Address> startAddressReference = existingTransport == null ? null : existingTransport.startAddress().orElse(null);
-        Address startAddress = TransportDetailsController.getAddressFromReference(startAddressReference);
-        TitledPane startAddressPane = new TitledPane("Startadresse", createAddressFields("Start", startAddress));
-
+        Address startAddresstemp = existingTransport.startAddress().equals(COptional.empty()) ? null : TransportDetailsController.getAddressFromReference(existingTransport.startAddress());
+        TitledPane startAddressPane = new TitledPane("Startadresse", createAddressFields("Start", startAddresstemp));
 
         // End Address Pane
-        Reference<Address> endAddressReference = existingTransport == null ? null : existingTransport.endAddress().orElse(null);
-        Address endAddress = TransportDetailsController.getAddressFromReference(endAddressReference);
-        TitledPane endAddressPane = new TitledPane("Zieladresse", createAddressFields("Ziel", endAddress));
+        Address endAddresstemp = existingTransport.endAddress().equals(COptional.empty()) ? null : TransportDetailsController.getAddressFromReference(existingTransport.endAddress());
+        TitledPane endAddressPane = new TitledPane("Zieladresse", createAddressFields("Ziel", endAddresstemp));
 
 // Direction ComboBox
         Label directionLabel = new Label("Richtung:");
@@ -347,7 +343,7 @@ public class TransportDetailsManagement {
                         .toList()
         );
         directionComboBox.getItems().add("nicht angegeben");
-        directionComboBox.setValue(existingTransport == null ? "nicht angegeben" : existingTransport.direction().get().toString());
+        directionComboBox.setValue(existingTransport.direction().equals(COptional.empty()) ? "nicht angegeben" : existingTransport.direction().get().toString());
 
 // Patient Condition ComboBox
         Label patientConditionLabel = new Label("Patientenzustand:");
@@ -359,69 +355,97 @@ public class TransportDetailsManagement {
                         .toList()
         );
         patientConditionComboBox.getItems().add("nicht angegeben");
-        patientConditionComboBox.setValue(existingTransport == null ? "nicht angegeben" : existingTransport.patientCondition().get().toString());
+        patientConditionComboBox.setValue(existingTransport.patientCondition().equals(COptional.empty()) ? "nicht angegeben" : existingTransport.patientCondition().get().toString());
 
         // Transport Provider ComboBox
         Label providerLabel = new Label("Transportanbieter:");
         ComboBox<String> transportProviderComboBox = new ComboBox<>();
+
         transportProviderComboBox.getItems().addAll(TransportDetailsController.getTransportproviders());
-        ServiceProvider transportProvider = existingTransport == null ? null : TransportDetailsController.getTransportproviderFromReference(existingTransport.transportProvider());
-        transportProviderComboBox.setValue(existingTransport == null ? "nicht angegeben" : transportProvider.name());
+        ServiceProvider transportProvider = existingTransport.transportProvider().equals(COptional.empty()) ? null : TransportDetailsController.getTransportproviderFromReference(existingTransport.transportProvider());
+        transportProviderComboBox.setValue(transportProvider == null ? "nicht angegeben" : transportProvider.name());
 
         // Tour Number Label
-        String tourNumber = existingTransport == null ? TransportDetailsController.getTransportTour(transportDocument.id()) : String.valueOf(existingTransport.tourNumber());
+        String tourNumber = existingTransport.tourNumber().equals(COptional.empty()) ? TransportDetailsController.getTransportTourNumber(transportDocument.id()) : existingTransport.tourNumber().get();
         Label tourNumberLabel = new Label("Tournummer: " + tourNumber);
 
         // Payment Exemption ComboBox
         Label paymentExemptionLabel = new Label("Zahlungsbefreiung:");
         ComboBox<Boolean> paymentExemptionComboBox = new ComboBox<>();
         paymentExemptionComboBox.getItems().addAll(true, false);
-        paymentExemptionComboBox.setValue(existingTransport == null ? false : Boolean.parseBoolean(String.valueOf(existingTransport.paymentExemption())));
+        paymentExemptionComboBox.setValue(!existingTransport.paymentExemption().equals(COptional.empty()) && existingTransport.paymentExemption().get());
 
         // Patient Signature
         Label patientSignatureLabel = new Label("Patientenunterschrift:");
         TextField patientSignatureField = new TextField();
-        patientSignatureField.setText(existingTransport == null ? "" : String.valueOf(existingTransport.patientSignature()));
+        patientSignatureField.setText(existingTransport.patientSignature().equals(COptional.empty()) ? "" : existingTransport.patientSignature().get());
         Button confirmPatientSignatureButton = new Button("Bestätigen");
-        COptional<Date> patientSignatureDate = existingTransport == null ? null : existingTransport.patientSignatureDate();
+        COptional<Date> patientSignatureDate = existingTransport.patientSignatureDate().equals(COptional.empty()) ? null : existingTransport.patientSignatureDate();
+        Label patientDateLabel = new Label(patientSignatureDate == null ? "nicht bestätigt" : patientSignatureDate.get().toString());
         AtomicReference<COptional<Date>> patientSignatureDateRef = new AtomicReference<>(patientSignatureDate);
-        confirmPatientSignatureButton.setOnAction(event -> {
-            patientSignatureDateRef.set(COptional.of(new Date(System.currentTimeMillis())));
-            System.out.println("Updated patientSignatureDate: " + patientSignatureDateRef.get());
-        });
 
         // Transporter Signature
         Label transporterSignatureLabel = new Label("Transporteurunterschrift:");
         TextField transporterSignatureField = new TextField();
-        transporterSignatureField.setText(existingTransport == null ? "" : String.valueOf(existingTransport.transporterSignature()));
+        transporterSignatureField.setText(existingTransport.transporterSignature().equals(COptional.empty()) ? "" : existingTransport.transporterSignature().get());
         Button confirmTransporterSignatureButton = new Button("Bestätigen");
-        COptional<Date> transporterSignatureDate = existingTransport == null ? null : existingTransport.transporterSignatureDate();
+        COptional<Date> transporterSignatureDate = existingTransport.transporterSignatureDate().equals(COptional.empty()) ? null : existingTransport.transporterSignatureDate();
+        Label transporterDateLabel = new Label(transporterSignatureDate == null ? "nicht bestätigt" : transporterSignatureDate.get().toString());
         AtomicReference<COptional<Date>> transporterSignatureDateRef = new AtomicReference<>(transporterSignatureDate);
-        confirmTransporterSignatureButton.setOnAction(event -> {
-            transporterSignatureDateRef.set(COptional.of(new Date(System.currentTimeMillis())));
-            System.out.println("Updated transporterSignatureDate: " + transporterSignatureDateRef.get());
-        });
+
+
+        //TODO Finish this
 
         // Save Button
         Button saveButton = new Button("Speichern");
         saveButton.setOnAction(event -> {
-
-            // Logik zur Speicherung hinzufügen
+            final Address startAddress = extractAddressFromFields((GridPane) startAddressPane.getContent());
+            final Address endAddress = extractAddressFromFields((GridPane) endAddressPane.getContent());
+            TransportDetailsController.updateTransport(
+                    existingTransport.id(),
+                    COptional.of(startAddress),
+                    COptional.of(endAddress),
+                    COptional.of(Direction.valueOf(directionComboBox.getValue())),
+                    COptional.of(PatientCondition.valueOf(patientConditionComboBox.getValue())),
+                    COptional.of(tourNumber),
+                    COptional.of(paymentExemptionComboBox.getValue()),
+                    transporterSignatureField.getText(),
+                    transporterSignatureDateRef.get().orElse(null),
+                    patientSignatureField.getText(),
+                    patientSignatureDateRef.get().orElse(null)
+            );
+            transports = TransportDetailsController.getTransports(transportDocument);
             stage.close();
         });
 
-        // Layout für den Scroll-Inhalt
+        confirmPatientSignatureButton.setOnAction(event -> {
+            if (!patientSignatureField.getText().isEmpty()) {
+                patientSignatureDateRef.set(COptional.of(new Date(System.currentTimeMillis())));
+                patientDateLabel.setText(patientSignatureDateRef.get().get().toString());
+                System.out.println("Updated patientSignatureDate: " + patientSignatureDateRef.get());
+            }
+        });
+
+        confirmTransporterSignatureButton.setOnAction(event -> {
+            if (!transporterSignatureField.getText().isEmpty()) {
+                transporterSignatureDateRef.set(COptional.of(new Date(System.currentTimeMillis())));
+                transporterDateLabel.setText(transporterSignatureDateRef.get().get().toString());
+                System.out.println("Updated transporterSignatureDate: " + transporterSignatureDateRef.get());
+            }
+        });
+
+// Layout für den Scroll-Inhalt
         VBox content = new VBox(15, idLabel, dateLabel, datePicker, startAddressPane, endAddressPane,
                 directionLabel, directionComboBox, patientConditionLabel, patientConditionComboBox,
                 providerLabel, transportProviderComboBox, tourNumberLabel, paymentExemptionLabel, paymentExemptionComboBox,
-                patientSignatureLabel, patientSignatureField, confirmPatientSignatureButton,
-                transporterSignatureLabel, transporterSignatureField, confirmTransporterSignatureButton);
+                patientSignatureLabel, patientSignatureField, patientDateLabel, confirmPatientSignatureButton,
+                transporterSignatureLabel, transporterSignatureField, transporterDateLabel, confirmTransporterSignatureButton);
 
-        // ScrollPane
+// ScrollPane
         ScrollPane scrollPane = new ScrollPane(content);
         scrollPane.setFitToWidth(true);
 
-        // Gesamtes Layout
+// Gesamtes Layout
         VBox layout = new VBox(10, scrollPane, saveButton);
         layout.setPadding(new Insets(10));
         Scene scene = new Scene(layout, 600, 600);
@@ -429,7 +453,6 @@ public class TransportDetailsManagement {
 
         return stage;
 
-        //TODO: fix this mess
     }
 
 
@@ -473,6 +496,23 @@ public class TransportDetailsManagement {
         gridPane.add(countryField, 1, 4);
 
         return gridPane;
+    }
+
+    private Address extractAddressFromFields(GridPane gridPane) {
+
+        TextField streetField = (TextField) gridPane.getChildren().get(1); // Spalte 1, Zeile 0
+        TextField houseNumberField = (TextField) gridPane.getChildren().get(3); // Spalte 1, Zeile 1
+        TextField postCodeField = (TextField) gridPane.getChildren().get(5); // Spalte 1, Zeile 2
+        TextField cityField = (TextField) gridPane.getChildren().get(7); // Spalte 1, Zeile 3
+        TextField countryField = (TextField) gridPane.getChildren().get(9); // Spalte 1, Zeile 4
+
+        return TransportDetailsController.createAddress(
+                streetField.getText(),
+                houseNumberField.getText(),
+                postCodeField.getText(),
+                cityField.getText(),
+                countryField.getText()
+        );
     }
 
 

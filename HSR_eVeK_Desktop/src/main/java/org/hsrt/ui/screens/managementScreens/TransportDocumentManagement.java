@@ -33,11 +33,8 @@ import java.sql.Date;
  */
 
 public class TransportDocumentManagement {
-
-    //TODO: Fetch patient data from the API via controller
-    static Patient patient = new Patient(new Id<Patient>("1"), new Reference<>(new Id<>("1")), "Mustermann", "Max", Date.valueOf("1990-01-01"), new Reference<>(new Id<>("1")));
-    static Reference<Patient> patientReference = new Reference<>(new Id<>(patient.insuranceNumber().toString()));
-    static Reference<InsuranceData> insuranceDataReference = new Reference<>(new Id<InsuranceData>("3"));
+    private ObservableList<TransportDocument> transportDocuments;
+    private User user;
 
     /**
      * Creates the window for managing transport documents.
@@ -50,6 +47,7 @@ public class TransportDocumentManagement {
 
     public Stage createTransportDocumentManagement(User user) {
 
+        this.user = user;
 
         Stage stage = new Stage();
         stage.setTitle("Transport Document Management");
@@ -59,12 +57,12 @@ public class TransportDocumentManagement {
         vbox.setAlignment(Pos.CENTER);
         vbox.setPadding(new Insets(10));
 
-        ObservableList<TransportDocument> transportDocuments = TransportDocumentController.getTransportDocuments(user);
+        transportDocuments = TransportDocumentController.getTransportDocuments(user);
 
 
 
         TableView<TransportDocument> tableView = new TableView<>(transportDocuments);
-        tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        tableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         tableView.setRowFactory(tv -> {
             TableRow<TransportDocument> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
@@ -82,7 +80,8 @@ public class TransportDocumentManagement {
         Button createButton = new Button("Create Transport Document");
         createButton.setOnAction(e -> {
             Stage createTransportDocumentStage = createTransportDocumentCreationWindow(null);
-            createTransportDocumentStage.show();
+            createTransportDocumentStage.showAndWait();
+            transportDocuments = TransportDocumentController.getTransportDocuments(user);
         });
 
         vbox.getChildren().addAll(createButton, tableView);
@@ -141,7 +140,7 @@ public class TransportDocumentManagement {
         TableColumn<TransportDocument, String> additionalInfoColumn = new TableColumn<>("Additional Info");
         additionalInfoColumn.setCellValueFactory(data ->{
             var additionalInfoOptional = data.getValue().additionalInfo();
-            return new SimpleStringProperty(!data.getValue().additionalInfo().equals(COptional.empty()) ? additionalInfoOptional.get().toString() : "N/A");});
+            return new SimpleStringProperty(!data.getValue().additionalInfo().equals(COptional.empty()) ? additionalInfoOptional.get() : "N/A");});
 
 
         TableColumn<TransportDocument, String> signatureColumn = new TableColumn<>("Signature");
@@ -153,6 +152,7 @@ public class TransportDocumentManagement {
                 new SimpleStringProperty(data.getValue().isArchived() ? "Yes" : "No"));
 
 
+        //noinspection unchecked
         tableView.getColumns().addAll(
                 idColumn,
                 patientColumn,
@@ -183,6 +183,9 @@ public class TransportDocumentManagement {
 
         VBox root = new VBox(15);
         root.setPadding(new Insets(20));
+
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(root);
 
         // Patientendaten
         Text patientLabel = new Text("Patientendaten");
@@ -243,7 +246,7 @@ public class TransportDocumentManagement {
             }
         }
         // Behandlungstage/Behandlungsfrequenz
-        Text treatmentLabel = new Text("2. Behandlungstage/Behandlungsfrequenz und nächsterreichbare, geeignete Behandlungsstätte");
+        Text treatmentLabel = new Text("2. Behandlungstage/Behandlungsfrequenz und nächst erreichbare, geeignete Behandlungsstätte");
         HBox startDateBox = new HBox(10);
         Text startDateLabel = new Text("Startdatum auswählen:");
         DatePicker treatmentDatePicker = new DatePicker();
@@ -270,7 +273,7 @@ public class TransportDocumentManagement {
         TextField weeklyTripsField = new TextField();
         weeklyTripsField.setPromptText("Fahrten pro Woche");
         if(existingDocument != null && existingDocument.weeklyFrequency() != null) {
-            weeklyTripsField.setText(existingDocument.weeklyFrequency().isPresent() ? existingDocument.weeklyFrequency().get().toString() : null);
+            weeklyTripsField.setText(existingDocument.weeklyFrequency().isPresent() ? existingDocument.weeklyFrequency().get().toString() : "");
         }
 
         VBox treatmentBox = new VBox(5, treatmentLabel, startDateBox, endDateBox, treatmentFacilityField, weeklyTripsField);
@@ -309,7 +312,7 @@ public class TransportDocumentManagement {
         TextArea justificationField = new TextArea();
         justificationField.setPromptText("Weitere Informationen eingeben");
         if (existingDocument != null && existingDocument.additionalInfo() != null) {
-            justificationField.setText(String.valueOf(existingDocument.additionalInfo().isPresent() ? existingDocument.additionalInfo().get() : null));
+            justificationField.setText(String.valueOf(existingDocument.additionalInfo().isPresent() ? existingDocument.additionalInfo().get() : ""));
         }
 
         Text errorLabel = new Text();
@@ -378,7 +381,7 @@ public class TransportDocumentManagement {
                 COptional<String> additionalInfoOpt = !justificationField.getText().isEmpty() ?
                         COptional.of(justificationField.getText()) : COptional.empty();
 
-                TransportDocument newDocument = null;
+                TransportDocument newDocument;
 
                 // Rufe die createTransportDocument-Methode auf
                 if(existingDocument != null) {
@@ -403,8 +406,9 @@ public class TransportDocumentManagement {
 
                 // Feedback für den Benutzer
                 Alert successAlert = new Alert(Alert.AlertType.INFORMATION,
-                        "Das Transportdokument wurde erfolgreich erstellt mit ID: " + newDocument.id());
+                        "Das Transportdokument wurde erfolgreich " + (existingDocument == null ?  "erstellt" : "aktualisiert") + " mit ID: " + newDocument.id());
                 successAlert.showAndWait();
+                transportDocuments = TransportDocumentController.getTransportDocuments(user);
                 stage.close();
 
             } catch (Exception ex) {
@@ -425,7 +429,7 @@ public class TransportDocumentManagement {
         );
 
 
-        Scene scene = new Scene(root, 1200, 800);
+        Scene scene = new Scene(scrollPane, 1200, 800);
         stage.setMaximized(true);
         stage.setScene(scene);
         return stage;
@@ -434,17 +438,13 @@ public class TransportDocumentManagement {
     private static HBox getHBox(TextField insuranceField, TextField patientField) {
         Button fetchInsuranceDataButton = new Button("Versicherungs-ID holen");
         fetchInsuranceDataButton.setOnAction(e -> {
-                    if (patient != null && patient.insuranceNumber() != null) {
-                        //TODO: Fetch insurance data from the API via controller
-                        insuranceField.setText(patient.insuranceNumber().toString());
-                    } else {
-                        insuranceField.setText("Keine Daten verfügbar");
-                    }
-                });
+            String insurance = TransportDocumentController.getInsuranceData(patientField.getText());
+            insuranceField.setText( insurance == null ? "Keine Versicherungsdaten gefunden" : insurance);
+
+        });
 
         // Layout für Patient und Insurance Data
-        HBox patientInsuranceBox = new HBox(10, patientField, fetchInsuranceDataButton, insuranceField);
-        return patientInsuranceBox;
+        return new HBox(10, patientField, fetchInsuranceDataButton, insuranceField);
     }
 
     /**
@@ -463,7 +463,7 @@ public class TransportDocumentManagement {
      * @param weeklyTripsField       The text field for the weekly trips.
      * @param endDatePicker          The date picker for the treatment end date.
      * @param errorLabel             The label for displaying error messages.
-     * @param treatmentFacilityField
+     * @param treatmentFacilityField The text field for the treatment facility.
      */
 
     private void checkFormCompletion(
@@ -494,7 +494,7 @@ public class TransportDocumentManagement {
         boolean isTreatmentFacilityEntered = !treatmentFacilityField.getText().trim().isEmpty();
 
         // Check if justification is required for selected transport type or reason
-        boolean isJustificationRequired = (transportTypeGroup.getSelectedToggle() == ktw
+        boolean isJustificationRequired = (transportTypeGroup.getSelectedToggle() == ktw || transportTypeGroup.getSelectedToggle() == otherTransport
                 || reasonGroup.getSelectedToggle() == exceptionalCase || reasonGroup.getSelectedToggle() == permanentImpairment || reasonGroup.getSelectedToggle() == otherReason2);
         boolean isJustificationProvided = !justificationField.getText().trim().isEmpty();
 
@@ -538,7 +538,6 @@ public class TransportDocumentManagement {
 
     /**
      * Displays a window with options for a transport document.
-     *
      * The user can edit the transport Document or view, create, edit or delete transports for the document.
      *
      * @param transportDocument The transport document for which the options should be displayed.
