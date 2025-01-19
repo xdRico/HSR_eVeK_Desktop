@@ -174,7 +174,16 @@ public class DataHandler implements IsInitializedListener {
     public TransportDocument updateTransportDocument(Id<TransportDocument> id, COptional<Reference<Patient>> patientOpt, COptional<Reference<InsuranceData>> insuranceDataOpt, TransportReason transportReason, Date startDate, COptional<Date> endDateOpt, COptional<Integer> weeklyFrequencyOpt, Reference<ServiceProvider> healthcareServiceProvider, TransportationType transportationType, COptional<String> additionalInfoOpt) {
         try {
             TransportDocument.Update cmd = new TransportDocument.Update(id, transportReason, startDate, endDateOpt, weeklyFrequencyOpt, healthcareServiceProvider, transportationType, additionalInfoOpt, Reference.to(loggedInUser.id()));
-            //TODO Check if InsuranceData and Patient are changed
+            TransportDocument original = getTransportDocumentById(id);
+            if(original.patient().equals(patientOpt)){
+                TransportDocument.AssignPatient cmd2 = new TransportDocument.AssignPatient(id, patientOpt);
+            }
+            //TODO InsuranceData
+            /*if(original.insuranceData().equals(insuranceDataOpt)){
+                TransportDocument. cmd3 = new TransportDocument.AssignInsuranceData(id, insuranceDataOpt);
+            }
+
+             */
             sender.sendTransportDocument(cmd);
             TransportDocument updated = receiver.receiveTransportDocument();
             return updated;
@@ -201,19 +210,42 @@ public class DataHandler implements IsInitializedListener {
 
     public ObservableList<TransportDetails> refreshTransports(TransportDocument transportDocument) {
         try {
+            // Liste leeren
             transportDetails.clear();
 
-            sender.sendTransportDetails(new TransportDetails.GetList(new TransportDetails.Filter(COptional.of(Reference.to(transportDocument.id())), COptional.empty(), COptional.empty(), COptional.empty(), COptional.empty())));
+            // Anfrage senden
+            sender.sendTransportDetails(new TransportDetails.GetList(
+                    new TransportDetails.Filter(
+                            COptional.of(Reference.to(transportDocument.id())),
+                            COptional.empty(),
+                            COptional.empty(),
+                            COptional.empty(),
+                            COptional.empty()
+                    )
+            ));
+
+            // Antwort empfangen
             List<TransportDetails> tempTransports = (List<TransportDetails>) receiver.receiveList();
-            System.out.println(tempTransports);
+
+            // Null-Prüfung
+            if (tempTransports == null) {
+                System.err.println("Warnung: receiver.receiveList() hat null zurückgegeben.");
+                tempTransports = List.of(); // Ersetze durch leere Liste
+            }
+
+            // Daten hinzufügen
             transportDetails.addAll(tempTransports);
+
             return transportDetails;
         } catch (Exception e) {
+            // Fehler protokollieren
             Log.sendException(e);
+
+            // Leere Liste zurückgeben
             return null;
         }
-
     }
+
 
     public TransportDetails createTransport(TransportDocument transportDocument, Date sqlDate) {
         try {
@@ -226,7 +258,17 @@ public class DataHandler implements IsInitializedListener {
             return null;
         }
     }
+
     public Address createAddress(Address addressOpt) {
+        try{
+            sender.sendAddress(new Address.GetList(new Address.Filter(COptional.of(addressOpt.streetName()), COptional.of(addressOpt.postCode()), COptional.of(addressOpt.city()), COptional.empty())));
+            List<Address> addresses = (List<Address>) receiver.receiveList();
+            if(!addresses.isEmpty()){
+                return addresses.getFirst();
+            }
+        } catch (Exception e) {
+            Log.sendException(e);
+        }
         try {
             Address.Create cmd = new Address.Create(COptional.empty(), addressOpt.streetName(), addressOpt.houseNumber(), addressOpt.country(), addressOpt.postCode(), addressOpt.city());
             sender.sendAddress(cmd);
@@ -237,13 +279,21 @@ public class DataHandler implements IsInitializedListener {
         }
     }
 
-    public TransportDetails updateTransport(Id<TransportDetails> id, COptional<Address> startAddressOpt, COptional<Address> endAddressOpt, COptional<Direction> directionOpt, COptional<PatientCondition> patientConditionOpt, COptional<String> tourNumber, COptional<Boolean> paymentExemption, String transporterSignature, Date transporterSignatureDate, String patientSignature, Date patientSignatureDate) {
+    public TransportDetails updateTransport(Id<TransportDetails> id, COptional<Address> startAddressOpt, COptional<Address> endAddressOpt, COptional<Direction> directionOpt, COptional<PatientCondition> patientConditionOpt, COptional<String> tourNumber, COptional<Boolean> paymentExemption, String transporterSignature, Date transporterSignatureDate, String patientSignature, Date patientSignatureDate, Reference<ServiceProvider> serviceProviderReference) {
         {
             try {
 
                 TransportDetails.Update cmd = new TransportDetails.Update(id, COptional.of(Reference.to(startAddressOpt.get().id())), COptional.of(Reference.to(endAddressOpt.get().id())), directionOpt, patientConditionOpt, tourNumber, paymentExemption);
                 sender.sendTransportDetails(cmd);
                 TransportDetails newTransport = receiver.receiveTransportDetails();
+                if(!serviceProviderReference.id().equals(new Id<>("-1"))){
+                    sender.sendTransportDetails(new TransportDetails.AssignTransportProvider(id, serviceProviderReference));
+                    receiver.receiveTransportDetails();
+                }
+                System.out.println(transporterSignature);
+                System.out.println(transporterSignatureDate);
+                System.out.println(patientSignature);
+                System.out.println(patientSignatureDate);
                 TransportDetails.UpdateTransporterSignature cmd2 = new TransportDetails.UpdateTransporterSignature(newTransport.id(), transporterSignature, transporterSignatureDate);
                 TransportDetails.UpdatePatientSignature cmd3 = new TransportDetails.UpdatePatientSignature(newTransport.id(), patientSignature, patientSignatureDate);
                 sender.sendTransportDetails(cmd2);
@@ -253,10 +303,12 @@ public class DataHandler implements IsInitializedListener {
                 return newTransport;
             } catch (Exception e) {
                 Log.sendException(e);
+                System.out.println("FEHLER");
                 return null;
             }
         }
     }
+
     public Address getAddressFromReference(COptional<Reference<Address>> AddressReference) {
         try {
             sender.sendAddress(new Address.Get(AddressReference.get().id()));
@@ -267,7 +319,29 @@ public class DataHandler implements IsInitializedListener {
         }
     }
 
+    public List<ServiceProvider> getTransportProviders() {
+        try {
+            sender.sendServiceProvider(new ServiceProvider.GetList(new ServiceProvider.Filter(COptional.empty(), COptional.empty(), COptional.empty(), COptional.of(true), COptional.empty())));
+            List<ServiceProvider> providers = (List<ServiceProvider>) receiver.receiveList();
+
+            System.out.println(providers);
+            return providers;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         //endregion
 
 
     }
+
+    public ServiceProvider getTransportProviderFromReference(COptional<Reference<ServiceProvider>> transportProviderReference) {
+        try {
+            sender.sendServiceProvider(new ServiceProvider.Get(transportProviderReference.get().id()));
+            return receiver.receiveServiceProvider();
+        } catch (Exception e) {
+            Log.sendException(e);
+            return null;
+        }
+    }
+}

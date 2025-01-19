@@ -11,10 +11,10 @@
         <!-- Entities -->
         <dependency>
             <groupId>HSR_eVeK_Desktop</groupId>
-            <artifactId>API_v0.2.3.jar</artifactId>
-            <version>2.3</version>
+            <artifactId>API_v0.2.4.jar</artifactId>
+            <version>2.4</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/lib/API_v0.2.3.jar</systemPath>
+            <systemPath>${project.basedir}/lib/API_v0.2.4.jar</systemPath>
         </dependency>
         <!-- Hibernate (optional für ORM) -->
         <dependency>

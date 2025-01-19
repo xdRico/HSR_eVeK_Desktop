@@ -37,7 +37,9 @@ import java.awt.image.BufferedImage;
 
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -74,17 +76,17 @@ public class TransportDetailsManagement {
         transports = TransportDetailsController.getTransports(transportDocument);
         TableView<TransportDetails> tableView = new TableView<>(transports);
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        tableView.setRowFactory(tv -> createTableRow(transportDocument, user));
+        tableView.setRowFactory(tv -> createTableRow(transportDocument, user, tableView));
         addColumnsToTableView(tableView);
         return tableView;
     }
 
-    private TableRow<TransportDetails> createTableRow(TransportDocument transportDocument, User user) {
+    private TableRow<TransportDetails> createTableRow(TransportDocument transportDocument, User user, TableView<TransportDetails> tableview) {
         TableRow<TransportDetails> row = new TableRow<>();
         row.setOnMouseClicked(event -> {
             if (!row.isEmpty() && event.getClickCount() == 1) {
                 TransportDetails clickedDetails = row.getItem();
-                showOptionsWindow(clickedDetails, transportDocument, user);
+                showOptionsWindow(clickedDetails, transportDocument, user, tableview);
             }
         });
         return row;
@@ -200,21 +202,21 @@ public class TransportDetailsManagement {
     * @param transport The transport for which the options should be displayed
     */
 
-    private void showOptionsWindow(TransportDetails transport, TransportDocument transportDocument, User user) {
+    private void showOptionsWindow(TransportDetails transport, TransportDocument transportDocument, User user, TableView<TransportDetails> tableview) {
         Stage dialogStage = new Stage();
         dialogStage.setTitle("Optionen für Transport");
-        VBox vbox = createOptionsLayout(transport, transportDocument, user, dialogStage);
+        VBox vbox = createOptionsLayout(transport, transportDocument, user, dialogStage, tableview);
         Scene scene = new Scene(vbox, 300, 200);
         dialogStage.setScene(scene);
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.showAndWait();
     }
 
-    private VBox createOptionsLayout(TransportDetails transport, TransportDocument transportDocument, User user, Stage dialogStage) {
+    private VBox createOptionsLayout(TransportDetails transport, TransportDocument transportDocument, User user, Stage dialogStage, TableView<TransportDetails> tableview) {
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
         Label infoLabel = new Label("Optionen für Transport-ID: " + transport.id());
-        Button editButton = createEditButton(transport, transportDocument, user, dialogStage);
+        Button editButton = createEditButton(transport, transportDocument, user, dialogStage, tableview);
         Button showQRButton = createQRButton(transport, dialogStage);
         Button deleteButton = createDeleteButton(transport, dialogStage);
         Button closeButton = createCloseButton(dialogStage);
@@ -279,11 +281,12 @@ public class TransportDetailsManagement {
         }
     }
 
-    private Button createEditButton(TransportDetails transport, TransportDocument transportDocument, User user, Stage dialogStage) {
+    private Button createEditButton(TransportDetails transport, TransportDocument transportDocument, User user, Stage dialogStage, TableView<TransportDetails> tableview) {
         Button editButton = new Button("Bearbeiten");
         editButton.setOnAction(e -> {
             Stage editStage = createTransportDetailsCreationWindow(transport, transportDocument, user);
             editStage.showAndWait();
+            tableview.setItems(transports);
             dialogStage.close();
         });
         editButton.setDisable(user.role() == UserRole.HealthcareUser || user.role() == UserRole.HealthcareDoctor);
@@ -316,6 +319,11 @@ public class TransportDetailsManagement {
         VBox root = new VBox(15);
         root.setPadding(new Insets(20));
 
+// Überprüfung auf gesperrten Zustand
+        boolean isLocked = existingTransport != null &&
+                existingTransport.transporterSignatureDate().isPresent() &&
+                existingTransport.patientSignatureDate().isPresent();
+
         // ID Label
         Text idLabel = new Text(existingTransport == null ? "ID wird vergeben" : "ID: " + existingTransport.id());
 
@@ -323,20 +331,21 @@ public class TransportDetailsManagement {
         Label dateLabel = new Label("Datum des Transports:");
         DatePicker datePicker = createDatePicker();
         datePicker.setValue(existingTransport == null ? LocalDate.now() : existingTransport.transportDate().toLocalDate());
-
+        datePicker.setDisable(isLocked);
 
         // Start Address Pane
         Address startAddresstemp = existingTransport.startAddress().equals(COptional.empty()) ? null : TransportDetailsController.getAddressFromReference(existingTransport.startAddress());
         TitledPane startAddressPane = new TitledPane("Startadresse", createAddressFields("Start", startAddresstemp));
+        startAddressPane.setDisable(isLocked);
 
         // End Address Pane
         Address endAddresstemp = existingTransport.endAddress().equals(COptional.empty()) ? null : TransportDetailsController.getAddressFromReference(existingTransport.endAddress());
         TitledPane endAddressPane = new TitledPane("Zieladresse", createAddressFields("Ziel", endAddresstemp));
+        endAddressPane.setDisable(isLocked);
 
-// Direction ComboBox
+        // Direction ComboBox
         Label directionLabel = new Label("Richtung:");
         ComboBox<String> directionComboBox = new ComboBox<>();
-// Einzelne Werte der Enum Direction hinzufügen
         directionComboBox.getItems().addAll(
                 Arrays.stream(Direction.values())
                         .map(Direction::toString)
@@ -344,11 +353,11 @@ public class TransportDetailsManagement {
         );
         directionComboBox.getItems().add("nicht angegeben");
         directionComboBox.setValue(existingTransport.direction().equals(COptional.empty()) ? "nicht angegeben" : existingTransport.direction().get().toString());
+        directionComboBox.setDisable(isLocked);
 
-// Patient Condition ComboBox
+        // Patient Condition ComboBox
         Label patientConditionLabel = new Label("Patientenzustand:");
         ComboBox<String> patientConditionComboBox = new ComboBox<>();
-// Einzelne Werte der Enum PatientCondition hinzufügen
         patientConditionComboBox.getItems().addAll(
                 Arrays.stream(PatientCondition.values())
                         .map(PatientCondition::toString)
@@ -356,17 +365,36 @@ public class TransportDetailsManagement {
         );
         patientConditionComboBox.getItems().add("nicht angegeben");
         patientConditionComboBox.setValue(existingTransport.patientCondition().equals(COptional.empty()) ? "nicht angegeben" : existingTransport.patientCondition().get().toString());
+        patientConditionComboBox.setDisable(isLocked);
 
         // Transport Provider ComboBox
         Label providerLabel = new Label("Transportanbieter:");
         ComboBox<String> transportProviderComboBox = new ComboBox<>();
+        List<ServiceProvider> tempProviders = TransportDetailsController.getTransportProviders();
+        tempProviders.forEach(provider -> transportProviderComboBox.getItems().add(provider.name()));
+        transportProviderComboBox.getItems().add("nicht angegeben");
+        if(user.role() == UserRole.SuperUser && existingTransport.transportProvider().equals(COptional.empty())){
+            ServiceProvider transportProvider = existingTransport.transportProvider().equals(COptional.empty()) ? null : TransportDetailsController.getTransportproviderFromReference(existingTransport.transportProvider());
+            transportProviderComboBox.setValue(transportProvider == null ? "nicht angegeben" : transportProvider.name());
 
-        transportProviderComboBox.getItems().addAll(TransportDetailsController.getTransportproviders());
-        ServiceProvider transportProvider = existingTransport.transportProvider().equals(COptional.empty()) ? null : TransportDetailsController.getTransportproviderFromReference(existingTransport.transportProvider());
-        transportProviderComboBox.setValue(transportProvider == null ? "nicht angegeben" : transportProvider.name());
+        } else if(user.role() == UserRole.SuperUser) {
+            ServiceProvider transportProvider = tempProviders.stream()
+                    .filter(provider -> provider.id().equals(existingTransport.transportProvider().get().id()))
+                    .findFirst()
+                    .orElse(null);
+            transportProviderComboBox.setValue(transportProvider == null ? "nicht angegeben" : transportProvider.name());
+            transportProviderComboBox.setDisable(true);
+        } else{
+            ServiceProvider userProvider = tempProviders.stream()
+                    .filter(provider -> provider.id().equals(user.serviceProvider()))
+                    .findFirst()
+                    .orElse(null);
+            transportProviderComboBox.setValue(userProvider == null ? "nicht angegeben" : userProvider.name());
+        }
+        transportProviderComboBox.setDisable(isLocked);
 
         // Tour Number Label
-        String tourNumber = existingTransport.tourNumber().equals(COptional.empty()) ? TransportDetailsController.getTransportTourNumber(transportDocument.id()) : existingTransport.tourNumber().get();
+        String tourNumber = existingTransport.tourNumber().equals(COptional.empty()) ? String.valueOf(transports.size()) : existingTransport.tourNumber().get();
         Label tourNumberLabel = new Label("Tournummer: " + tourNumber);
 
         // Payment Exemption ComboBox
@@ -374,6 +402,7 @@ public class TransportDetailsManagement {
         ComboBox<Boolean> paymentExemptionComboBox = new ComboBox<>();
         paymentExemptionComboBox.getItems().addAll(true, false);
         paymentExemptionComboBox.setValue(!existingTransport.paymentExemption().equals(COptional.empty()) && existingTransport.paymentExemption().get());
+        paymentExemptionComboBox.setDisable(isLocked);
 
         // Patient Signature
         Label patientSignatureLabel = new Label("Patientenunterschrift:");
@@ -384,7 +413,7 @@ public class TransportDetailsManagement {
         Label patientDateLabel = new Label(patientSignatureDate == null ? "nicht bestätigt" : patientSignatureDate.get().toString());
         AtomicReference<COptional<Date>> patientSignatureDateRef = new AtomicReference<>(patientSignatureDate);
 
-        // Transporter Signature
+// Transporter Signature
         Label transporterSignatureLabel = new Label("Transporteurunterschrift:");
         TextField transporterSignatureField = new TextField();
         transporterSignatureField.setText(existingTransport.transporterSignature().equals(COptional.empty()) ? "" : existingTransport.transporterSignature().get());
@@ -393,14 +422,56 @@ public class TransportDetailsManagement {
         Label transporterDateLabel = new Label(transporterSignatureDate == null ? "nicht bestätigt" : transporterSignatureDate.get().toString());
         AtomicReference<COptional<Date>> transporterSignatureDateRef = new AtomicReference<>(transporterSignatureDate);
 
+// Bestätigungs-Button-Logik für Patient Signature
+        confirmPatientSignatureButton.setDisable(patientSignatureDate != null); // Nur aktivieren, wenn kein Datum vorhanden
+        confirmPatientSignatureButton.setOnAction(event -> {
+            if (!patientSignatureField.getText().isEmpty() && patientSignatureDateRef.get() == null) {
+                patientSignatureDateRef.set(COptional.of(new Date(System.currentTimeMillis())));
+                patientDateLabel.setText(patientSignatureDateRef.get().get().toString());
+                confirmPatientSignatureButton.setDisable(true); // Nach Bestätigung deaktivieren
+                System.out.println("PatientSignatureDate hinzugefügt: " + patientSignatureDateRef.get().get());
+            }
+        });
 
-        //TODO Finish this
+// Bestätigungs-Button-Logik für Transporter Signature
+        confirmTransporterSignatureButton.setDisable(transporterSignatureDate != null); // Nur aktivieren, wenn kein Datum vorhanden
+        confirmTransporterSignatureButton.setOnAction(event -> {
+            if (!transporterSignatureField.getText().isEmpty() && transporterSignatureDateRef.get() == null) {
+                transporterSignatureDateRef.set(COptional.of(new Date(System.currentTimeMillis())));
+                transporterDateLabel.setText(transporterSignatureDateRef.get().get().toString());
+                confirmTransporterSignatureButton.setDisable(true); // Nach Bestätigung deaktivieren
+                System.out.println("TransporterSignatureDate hinzugefügt: " + transporterSignatureDateRef.get().get());
+            }
+        });
+
+
+
+
 
         // Save Button
         Button saveButton = new Button("Speichern");
+        saveButton.setDisable(isLocked);
         saveButton.setOnAction(event -> {
-            final Address startAddress = extractAddressFromFields((GridPane) startAddressPane.getContent());
-            final Address endAddress = extractAddressFromFields((GridPane) endAddressPane.getContent());
+            if (existingTransport == null || isLocked) return;
+
+            Address startAddress = extractAddressFromFields((GridPane) startAddressPane.getContent());
+            Address endAddress = extractAddressFromFields((GridPane) endAddressPane.getContent());
+
+            System.out.println("Startadresse: " + startAddress);
+            System.out.println("Zieladresse: " + endAddress);
+
+            System.out.println(transporterSignatureField.getText());
+            System.out.println(transporterSignatureDateRef.get());
+            System.out.println(patientSignatureField.getText());
+            System.out.println(patientSignatureDateRef.get());
+
+            ServiceProvider transportProvider = tempProviders.stream()
+                    .filter(provider -> provider.name().equals(transportProviderComboBox.getValue()))
+                    .findFirst()
+                    .orElse(null);
+
+
+
             TransportDetailsController.updateTransport(
                     existingTransport.id(),
                     COptional.of(startAddress),
@@ -409,39 +480,36 @@ public class TransportDetailsManagement {
                     COptional.of(PatientCondition.valueOf(patientConditionComboBox.getValue())),
                     COptional.of(tourNumber),
                     COptional.of(paymentExemptionComboBox.getValue()),
-                    transporterSignatureField.getText(),
-                    transporterSignatureDateRef.get().orElse(null),
-                    patientSignatureField.getText(),
-                    patientSignatureDateRef.get().orElse(null)
+                    transporterSignatureField.getText() == null ? "" : transporterSignatureField.getText(),
+                    transporterSignatureDateRef.get() == null ? null : transporterSignatureDateRef.get().get(),
+                    patientSignatureField.getText() == null ? "" : patientSignatureField.getText(),
+                    patientSignatureDateRef.get() == null ? null : patientSignatureDateRef.get().get(),
+                    existingTransport.transportProvider().equals(COptional.empty()) ? transportProvider : null
             );
+
             transports = TransportDetailsController.getTransports(transportDocument);
+
             stage.close();
         });
+        // Felder deaktivieren, wenn gesperrt
+        datePicker.setDisable(isLocked);
+        startAddressPane.setDisable(isLocked);
+        endAddressPane.setDisable(isLocked);
+        directionComboBox.setDisable(isLocked);
+        patientConditionComboBox.setDisable(isLocked);
+        transportProviderComboBox.setDisable(isLocked);
+        paymentExemptionComboBox.setDisable(isLocked);
+        patientSignatureField.setDisable(isLocked && patientSignatureDate != null); // Aktiv, wenn kein Datum
+        transporterSignatureField.setDisable(isLocked && transporterSignatureDate != null); // Aktiv, wenn kein Datum
+        saveButton.setDisable(isLocked);
 
-        confirmPatientSignatureButton.setOnAction(event -> {
-            if (!patientSignatureField.getText().isEmpty()) {
-                patientSignatureDateRef.set(COptional.of(new Date(System.currentTimeMillis())));
-                patientDateLabel.setText(patientSignatureDateRef.get().get().toString());
-                System.out.println("Updated patientSignatureDate: " + patientSignatureDateRef.get());
-            }
-        });
-
-        confirmTransporterSignatureButton.setOnAction(event -> {
-            if (!transporterSignatureField.getText().isEmpty()) {
-                transporterSignatureDateRef.set(COptional.of(new Date(System.currentTimeMillis())));
-                transporterDateLabel.setText(transporterSignatureDateRef.get().get().toString());
-                System.out.println("Updated transporterSignatureDate: " + transporterSignatureDateRef.get());
-            }
-        });
-
-// Layout für den Scroll-Inhalt
         VBox content = new VBox(15, idLabel, dateLabel, datePicker, startAddressPane, endAddressPane,
                 directionLabel, directionComboBox, patientConditionLabel, patientConditionComboBox,
                 providerLabel, transportProviderComboBox, tourNumberLabel, paymentExemptionLabel, paymentExemptionComboBox,
-                patientSignatureLabel, patientSignatureField, patientDateLabel, confirmPatientSignatureButton,
-                transporterSignatureLabel, transporterSignatureField, transporterDateLabel, confirmTransporterSignatureButton);
+                patientSignatureLabel, patientSignatureField, confirmPatientSignatureButton, patientDateLabel,
+                transporterSignatureLabel, transporterSignatureField, confirmTransporterSignatureButton, transporterDateLabel);
 
-// ScrollPane
+        // ScrollPane
         ScrollPane scrollPane = new ScrollPane(content);
         scrollPane.setFitToWidth(true);
 
@@ -453,7 +521,9 @@ public class TransportDetailsManagement {
 
         return stage;
 
+
     }
+
 
 
 
@@ -505,6 +575,7 @@ public class TransportDetailsManagement {
         TextField postCodeField = (TextField) gridPane.getChildren().get(5); // Spalte 1, Zeile 2
         TextField cityField = (TextField) gridPane.getChildren().get(7); // Spalte 1, Zeile 3
         TextField countryField = (TextField) gridPane.getChildren().get(9); // Spalte 1, Zeile 4
+
 
         return TransportDetailsController.createAddress(
                 streetField.getText(),
