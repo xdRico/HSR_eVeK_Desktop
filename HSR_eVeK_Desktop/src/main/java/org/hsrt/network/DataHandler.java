@@ -106,17 +106,16 @@ public class DataHandler implements IsInitializedListener {
                                                      Reference<ServiceProvider> healthcareServiceProvider,
                                                      TransportationType transportationType,
                                                      COptional<String> additionalInfo) throws ProcessingException {
-        System.out.println("Creating Transport Document" +
-                "Patient: " + patient +
-                "InsuranceData: " + insuranceData +
-                "TransportReason: " + transportReason +
-                "StartDate: " + startDate +
-                "EndDate: " + endDate +
-                "WeeklyFrequency: " + weeklyFrequency +
-                "HealthcareServiceProvider: " + healthcareServiceProvider +
-                "TransportationType: " + transportationType +
-                "AdditionalInfo: " + additionalInfo +
-                "LoggedInUser: " + loggedInUser);
+
+
+        if(patient.get().id() == null){
+            patient = COptional.empty();
+        }
+        if(insuranceData.get().id() == null){
+            insuranceData = COptional.empty();
+        }
+
+
 
 
         try {
