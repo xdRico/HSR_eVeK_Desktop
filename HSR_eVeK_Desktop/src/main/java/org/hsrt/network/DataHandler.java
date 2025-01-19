@@ -175,17 +175,16 @@ public class DataHandler implements IsInitializedListener {
         try {
             TransportDocument.Update cmd = new TransportDocument.Update(id, transportReason, startDate, endDateOpt, weeklyFrequencyOpt, healthcareServiceProvider, transportationType, additionalInfoOpt, Reference.to(loggedInUser.id()));
             TransportDocument original = getTransportDocumentById(id);
-            if(original.patient().equals(patientOpt)){
-                TransportDocument.AssignPatient cmd2 = new TransportDocument.AssignPatient(id, patientOpt);
-            }
-            //TODO InsuranceData
-            /*if(original.insuranceData().equals(insuranceDataOpt)){
-                TransportDocument. cmd3 = new TransportDocument.AssignInsuranceData(id, insuranceDataOpt);
-            }
 
-             */
             sender.sendTransportDocument(cmd);
             TransportDocument updated = receiver.receiveTransportDocument();
+
+            if(original.patient().equals(patientOpt)){
+                TransportDocument.AssignPatient cmd2 = new TransportDocument.AssignPatient(id, patientOpt.get(), insuranceDataOpt.get());
+                sender.sendTransportDocument(cmd2);
+                receiver.receiveTransportDocument();
+            }
+
             return updated;
         } catch (Exception e) {
             Log.sendException(e);
