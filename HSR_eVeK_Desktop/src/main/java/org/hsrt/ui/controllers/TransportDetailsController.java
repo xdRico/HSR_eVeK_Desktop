@@ -124,4 +124,17 @@ public class TransportDetailsController {
     public static void shutdownExecutor() {
         executor.shutdown();
     }
+
+    public static void deleteTransport(TransportDetails transport) {
+        try {
+            executor.submit(() -> {
+                DataHandler dataHandler = DataHandler.instance();
+                dataHandler.initServerConnection();
+                dataHandler.deleteTransport(transport);
+                return null;
+            }).get();
+        } catch (Exception e) {
+            throw new RuntimeException("Fehler beim Löschen des Transports", e);
+        }
+    }
 }

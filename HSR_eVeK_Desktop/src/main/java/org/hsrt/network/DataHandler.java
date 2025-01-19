@@ -293,12 +293,19 @@ public class DataHandler implements IsInitializedListener {
                 System.out.println(transporterSignatureDate);
                 System.out.println(patientSignature);
                 System.out.println(patientSignatureDate);
-                TransportDetails.UpdateTransporterSignature cmd2 = new TransportDetails.UpdateTransporterSignature(newTransport.id(), transporterSignature, transporterSignatureDate);
-                TransportDetails.UpdatePatientSignature cmd3 = new TransportDetails.UpdatePatientSignature(newTransport.id(), patientSignature, patientSignatureDate);
-                sender.sendTransportDetails(cmd2);
-                receiver.receiveTransportDetails();
-                sender.sendTransportDetails(cmd3);
-                System.out.println(receiver.receiveTransportDetails());
+                if(transporterSignature != null && transporterSignatureDate != null){
+                    TransportDetails.UpdateTransporterSignature cmd2 = new TransportDetails.UpdateTransporterSignature(newTransport.id(), transporterSignature, transporterSignatureDate);
+                    sender.sendTransportDetails(cmd2);
+                    receiver.receiveTransportDetails();
+                }
+                if(patientSignature != null && patientSignatureDate != null){
+                    TransportDetails.UpdatePatientSignature cmd3 = new TransportDetails.UpdatePatientSignature(newTransport.id(), patientSignature, patientSignatureDate);
+
+
+                    sender.sendTransportDetails(cmd3);
+                    System.out.println(receiver.receiveTransportDetails());
+                }
+
                 return newTransport;
             } catch (Exception e) {
                 Log.sendException(e);
@@ -341,6 +348,15 @@ public class DataHandler implements IsInitializedListener {
         } catch (Exception e) {
             Log.sendException(e);
             return null;
+        }
+    }
+
+    public void deleteTransport(TransportDetails transport) {
+        try {
+            sender.sendTransportDetails(new TransportDetails.Delete(transport.id()));
+            receiver.receiveTransportDetails();
+        } catch (Exception e) {
+            Log.sendException(e);
         }
     }
 }

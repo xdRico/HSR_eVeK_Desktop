@@ -6,8 +6,10 @@ import de.ehealth.evek.api.util.COptional;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
+import javafx.scene.Node;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.GridPane;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import org.hsrt.ui.controllers.TransportDetailsController;
 
@@ -40,6 +42,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -218,7 +221,9 @@ public class TransportDetailsManagement {
         Label infoLabel = new Label("Optionen für Transport-ID: " + transport.id());
         Button editButton = createEditButton(transport, transportDocument, user, dialogStage, tableview);
         Button showQRButton = createQRButton(transport, dialogStage);
-        Button deleteButton = createDeleteButton(transport, dialogStage);
+        Button deleteButton = createDeleteButton(transport, dialogStage, tableview, transportDocument);
+
+       //TODO deleteButton nur für bestimmte User voallem nach dem Unterschreiben
         Button closeButton = createCloseButton(dialogStage);
         vbox.getChildren().addAll(infoLabel, showQRButton, editButton, deleteButton, closeButton);
         vbox.setAlignment(Pos.CENTER);
@@ -293,10 +298,10 @@ public class TransportDetailsManagement {
         return editButton;
     }
 
-    private Button createDeleteButton(TransportDetails transport, Stage dialogStage) {
+    private Button createDeleteButton(TransportDetails transport, Stage dialogStage, TableView<TransportDetails> tableView, TransportDocument transportDocument) {
         Button deleteButton = new Button("Löschen");
         deleteButton.setOnAction(e -> {
-            handleDeleteTransport(transport);
+            handleDeleteTransport(transport, tableView, transportDocument);
             dialogStage.close();
         });
         return deleteButton;
@@ -321,7 +326,6 @@ public class TransportDetailsManagement {
 
 // Überprüfung auf gesperrten Zustand
         boolean isLocked = existingTransport != null &&
-                existingTransport.transporterSignatureDate().isPresent() &&
                 existingTransport.patientSignatureDate().isPresent();
 
         // ID Label
@@ -444,13 +448,8 @@ public class TransportDetailsManagement {
             }
         });
 
-
-
-
-
         // Save Button
         Button saveButton = new Button("Speichern");
-        saveButton.setDisable(isLocked);
         saveButton.setOnAction(event -> {
             if (existingTransport == null || isLocked) return;
 
@@ -487,43 +486,147 @@ public class TransportDetailsManagement {
                     existingTransport.transportProvider().equals(COptional.empty()) ? transportProvider : null
             );
 
-            transports = TransportDetailsController.getTransports(transportDocument);
+            transports.setAll(TransportDetailsController.getTransports(transportDocument));
 
             stage.close();
         });
-        // Felder deaktivieren, wenn gesperrt
-        datePicker.setDisable(isLocked);
-        startAddressPane.setDisable(isLocked);
-        endAddressPane.setDisable(isLocked);
-        directionComboBox.setDisable(isLocked);
-        patientConditionComboBox.setDisable(isLocked);
-        transportProviderComboBox.setDisable(isLocked);
-        paymentExemptionComboBox.setDisable(isLocked);
-        patientSignatureField.setDisable(isLocked && patientSignatureDate != null); // Aktiv, wenn kein Datum
-        transporterSignatureField.setDisable(isLocked && transporterSignatureDate != null); // Aktiv, wenn kein Datum
-        saveButton.setDisable(isLocked);
+        // Speichern-Button-Logik
+        saveButton.setDisable(true); // Initial deaktivieren
 
+        // Text für Fehlermeldungen
+        Text errorLabel = new Text();
+        errorLabel.setFill(Color.RED); // Rot für Fehleranzeige
+        errorLabel.setVisible(false); // Standardmäßig ausgeblendet
+
+// Methode zur Validierung des Speichern-Buttons und Aktualisierung der Fehlermeldung
+        Runnable validateSaveButtonAndStyles = () -> {
+            boolean isStartAddressValid = validateAddressField((GridPane) startAddressPane.getContent());
+            boolean isEndAddressValid = validateAddressField((GridPane) endAddressPane.getContent());
+            boolean isDirectionValid = validateComboBox(directionComboBox);
+            boolean isPatientConditionValid = validateComboBox(patientConditionComboBox);
+            boolean isTransportProviderValid = validateComboBox(transportProviderComboBox);
+
+            // Speichern-Button deaktivieren, wenn Bedingungen nicht erfüllt sind
+            saveButton.setDisable(isLocked);
+            if(!isLocked) {
+                saveButton.setDisable(!(isStartAddressValid && isEndAddressValid && isDirectionValid &&
+                        isPatientConditionValid && isTransportProviderValid));
+            }
+
+            // Dynamische Fehlermeldung
+            StringBuilder errorMessage = new StringBuilder();
+            if (!isStartAddressValid) errorMessage.append("Die Startadresse muss ausgefüllt werden.\n");
+            if (!isEndAddressValid) errorMessage.append("Die Zieladresse muss ausgefüllt werden.\n");
+            if (!isDirectionValid) errorMessage.append("Bitte wählen Sie eine Richtung aus.\n");
+            if (!isPatientConditionValid) errorMessage.append("Bitte wählen Sie einen Patientenzustand aus.\n");
+            if (!isTransportProviderValid) errorMessage.append("Bitte wählen Sie einen Transportanbieter aus.\n");
+
+            errorLabel.setText(errorMessage.toString());
+            errorLabel.setVisible(!errorMessage.isEmpty());
+        };
+
+// Event-Listener für Felder mit Validierung
+        addChangeListener((GridPane) startAddressPane.getContent(), validateSaveButtonAndStyles, true);
+        addChangeListener((GridPane) endAddressPane.getContent(), validateSaveButtonAndStyles, true);
+        addComboBoxListener(directionComboBox, validateSaveButtonAndStyles, true);
+        addComboBoxListener(patientConditionComboBox, validateSaveButtonAndStyles, true);
+        addComboBoxListener(transportProviderComboBox, validateSaveButtonAndStyles, true);
+
+        // Hinzufügen eines "Entsperren"-Buttons
+        Button unlockButton = new Button("Entsperren");
+        unlockButton.setDisable(!isLocked); // Button nur aktiv, wenn der Transport gesperrt ist
+        unlockButton.setOnAction(event -> {
+            // Bestätigungsdialog anzeigen
+            Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmationAlert.setTitle("Bestätigung erforderlich");
+            confirmationAlert.setHeaderText("Transport entsperren");
+            confirmationAlert.setContentText("Möchten Sie den Transport wirklich entsperren? Dadurch werden alle Unterschriften und zugehörige Daten gelöscht.");
+
+            // Benutzeraktion abfragen
+            Optional<ButtonType> result = confirmationAlert.showAndWait();
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                TransportDetails newTransport = new TransportDetails(existingTransport.id(), existingTransport.transportDocument(), existingTransport.transportDate(), existingTransport.startAddress(), existingTransport.endAddress(), existingTransport.direction(), existingTransport.patientCondition(), existingTransport.transportProvider(), existingTransport.tourNumber(), existingTransport.paymentExemption(), COptional.empty(), COptional.empty(), COptional.empty(), COptional.empty());
+                Stage newstage = createTransportDetailsCreationWindow(newTransport, transportDocument, user);
+                stage.close();
+
+                newstage.show();
+                System.out.println("Transport wurde entsperrt. Felder wurden zurückgesetzt.");
+            } else {
+                System.out.println("Entsperrung abgebrochen.");
+            }
+        });
+
+// Hinzufügen des Buttons zum Layout
         VBox content = new VBox(15, idLabel, dateLabel, datePicker, startAddressPane, endAddressPane,
                 directionLabel, directionComboBox, patientConditionLabel, patientConditionComboBox,
                 providerLabel, transportProviderComboBox, tourNumberLabel, paymentExemptionLabel, paymentExemptionComboBox,
                 patientSignatureLabel, patientSignatureField, confirmPatientSignatureButton, patientDateLabel,
-                transporterSignatureLabel, transporterSignatureField, confirmTransporterSignatureButton, transporterDateLabel);
+                transporterSignatureLabel, transporterSignatureField, confirmTransporterSignatureButton, transporterDateLabel,
+                unlockButton, errorLabel, saveButton);
 
         // ScrollPane
         ScrollPane scrollPane = new ScrollPane(content);
         scrollPane.setFitToWidth(true);
+        validateSaveButtonAndStyles.run();
 
 // Gesamtes Layout
-        VBox layout = new VBox(10, scrollPane, saveButton);
+        VBox layout = new VBox(10, scrollPane);
         layout.setPadding(new Insets(10));
         Scene scene = new Scene(layout, 600, 600);
         stage.setScene(scene);
+
 
         return stage;
 
 
     }
 
+    // Methode zur Validierung von Adressfeldern und Aktualisierung ihres Stils
+    private boolean validateAddressField(GridPane gridPane) {
+        boolean isValid = true;
+        for (Node node : gridPane.getChildren()) {
+            if (node instanceof TextField textField) {
+                if (textField.getText().trim().isEmpty()) {
+                    textField.setStyle("-fx-border-color: red; -fx-border-width: 2;");
+                    isValid = false;
+                } else {
+                    textField.setStyle(""); // Zurücksetzen, wenn gültig
+                }
+            }
+        }
+        return isValid;
+    }
+
+    // Methode zur Validierung von ComboBoxen und Aktualisierung ihres Stils
+    private boolean validateComboBox(ComboBox<?> comboBox) {
+        boolean isValid = comboBox.getValue() != null && !comboBox.getValue().toString().equals("nicht angegeben");
+        if (!isValid) {
+            comboBox.setStyle("-fx-border-color: red; -fx-border-width: 2;");
+        } else {
+            comboBox.setStyle(""); // Zurücksetzen, wenn gültig
+        }
+        return isValid;
+    }
+
+    // Methode zur Validierung und Initialisierung von Adressfeldern
+    private void addChangeListener(GridPane gridPane, Runnable onChange, boolean runInitially) {
+        for (Node node : gridPane.getChildren()) {
+            if (node instanceof TextField textField) {
+                textField.textProperty().addListener((obs, oldVal, newVal) -> onChange.run());
+                if (runInitially) {
+                    onChange.run(); // Initial ausführen
+                }
+            }
+        }
+    }
+
+    // Methode zur Validierung und Initialisierung von ComboBoxen
+    private void addComboBoxListener(ComboBox<?> comboBox, Runnable onChange, boolean runInitially) {
+        comboBox.valueProperty().addListener((obs, oldVal, newVal) -> onChange.run());
+        if (runInitially) {
+            onChange.run(); // Initial ausführen
+        }
+    }
 
 
 
@@ -587,16 +690,28 @@ public class TransportDetailsManagement {
     }
 
 
-    private void handleEditTransport(TransportDetails transport) {
-        System.out.println("Bearbeite Transport: " + transport);
-    }
-
     /**
      * Handles the deletion of a transport.
      * @param transport The transport to delete
      */
 
-    private void handleDeleteTransport(TransportDetails transport) {
-        System.out.println("Lösche Transport: " + transport);
+    private void handleDeleteTransport(TransportDetails transport, TableView<TransportDetails> tableView, TransportDocument transportDocument) {
+        // Dialog für die Bestätigung
+        Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmationAlert.setTitle("Bestätigung erforderlich");
+        confirmationAlert.setHeaderText("Transport löschen");
+        confirmationAlert.setContentText("Sind Sie sicher, dass Sie den Transport löschen möchten?");
+
+        // Benutzeraktion abfragen
+        Optional<ButtonType> result = confirmationAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            // Transport löschen, wenn bestätigt
+            TransportDetailsController.deleteTransport(transport);
+            transports = TransportDetailsController.getTransports(transportDocument);
+            tableView.setItems(transports);
+        } else {
+            // Abbrechen, nichts tun
+            System.out.println("Löschvorgang abgebrochen");
+        }
     }
 }

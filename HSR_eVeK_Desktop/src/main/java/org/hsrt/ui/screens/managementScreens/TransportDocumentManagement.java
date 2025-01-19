@@ -1,13 +1,9 @@
 package org.hsrt.ui.screens.managementScreens;
 
 import de.ehealth.evek.api.entity.*;
-import de.ehealth.evek.api.type.TransportationType;
+import de.ehealth.evek.api.type.*;
 
 
-
-import de.ehealth.evek.api.type.Id;
-import de.ehealth.evek.api.type.Reference;
-import de.ehealth.evek.api.type.TransportReason;
 import de.ehealth.evek.api.util.COptional;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ObservableList;
@@ -322,19 +318,38 @@ public class TransportDocumentManagement {
 
         // Submit Button
         Button submitButton = new Button(existingDocument == null ? "Erstellen" : "Speichern");
+        // Dynamische Validierung für den Submit-Button
         submitButton.setDisable(true);
 
-        // Enable button only if required fields are filled
-        reasonGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField));
-        treatmentDatePicker.valueProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField));
-        transportTypeGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField));
-        justificationField.textProperty().addListener((observable, oldValue, newValue) -> checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField));
+        // Listener für dynamische Überprüfung hinzufügen
+        reasonGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) ->
+                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField,
+                        ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField)
+        );
+        treatmentDatePicker.valueProperty().addListener((observable, oldValue, newValue) ->
+                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField,
+                        ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField)
+        );
+        transportTypeGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) ->
+                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField,
+                        ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField)
+        );
+        justificationField.textProperty().addListener((observable, oldValue, newValue) ->
+                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField,
+                        ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField)
+        );
         weeklyTripsField.textProperty().addListener((observable, oldValue, newValue) ->
-                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField)
+                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField,
+                        ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField)
+        );
+        endDatePicker.valueProperty().addListener((observable, oldValue, newValue) ->
+                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField,
+                        ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField)
         );
 
-        endDatePicker.valueProperty().addListener((observable, oldValue, newValue) ->
-                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField, ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField)
+        treatmentFacilityField.textProperty().addListener((observable, oldValue, newValue) ->
+                checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField,
+                        ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField)
         );
 
 
@@ -342,8 +357,8 @@ public class TransportDocumentManagement {
             try {
                 System.out.println("Submit Button clicked");
                 // Extrahiere die Werte aus den Eingabefeldern
-                COptional<Reference<Patient>> patientOpt = COptional.of(new Reference<>(new Id<>(patientField.getText())));
-                COptional<Reference<InsuranceData>> insuranceDataOpt = COptional.ofNullable(new Reference<>(new Id<>(insuranceField.getText())));
+                COptional<Reference<Patient>> patientOpt = COptional.ofNullable(new Reference<>(new Id<>(patientField.getText().isEmpty() ? null : patientField.getText())));
+                COptional<Reference<InsuranceData>> insuranceDataOpt = COptional.ofNullable(new Reference<>(new Id<>(insuranceField.getText().isEmpty() ? null : insuranceField.getText())));
 
                 // Extrahiere den Transportgrund aus dem ToggleGroup
                 TransportReason transportReason = switch (reasonGroup.getSelectedToggle()) {
@@ -417,6 +432,10 @@ public class TransportDocumentManagement {
                 errorAlert.showAndWait();
             }
         });
+
+        // Direktes Validieren nach Initialisierung
+        checkFormCompletion(submitButton, reasonGroup, treatmentDatePicker, transportTypeGroup, justificationField,
+                ktw, otherTransport, exceptionalCase, permanentImpairment, otherReason2, weeklyTripsField, endDatePicker, errorLabel, treatmentFacilityField);
 
         root.getChildren().addAll(
                 patientBox,
@@ -561,7 +580,6 @@ public class TransportDocumentManagement {
             System.out.println("Transport wird erstellt für Dokument: " + transportDocument.id());
             optionsStage.close();
         });
-
         Button editDocumentButton = new Button("TransportDocument bearbeiten");
         editDocumentButton.setOnAction(e -> {
             // Logik zum Bearbeiten des Dokuments
@@ -570,6 +588,7 @@ public class TransportDocumentManagement {
             optionsStage.close();
 
         });
+        editDocumentButton.setDisable(user.role() != UserRole.HealthcareUser && user.role() != UserRole.HealthcareDoctor && user.role() != UserRole.SuperUser);
 
         root.getChildren().addAll(infoLabel, createTransportButton, editDocumentButton);
 
