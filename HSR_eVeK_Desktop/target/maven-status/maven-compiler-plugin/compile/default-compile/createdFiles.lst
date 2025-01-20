@@ -9,6 +9,7 @@ org\hsrt\ui\screens\menu\InsuranceMenuScreen.class
 org\hsrt\ui\screens\menu\TransportProviderMenuScreen.class
 org\hsrt\ui\screens\menu\MenuScreen.class
 org\hsrt\ui\controllers\LoginController.class
+org\hsrt\ui\screens\creationScreens\TransportDetailsCreationScreen.class
 org\hsrt\ui\controllers\TransportDetailsController.class
 org\hsrt\network\config\SocketConfig.class
 org\hsrt\ui\controllers\UserManagementController.class

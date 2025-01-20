@@ -85,9 +85,11 @@ public class TransportDetailsCreationScreen {
         List<ServiceProvider> tempProviders = TransportDetailsController.getTransportProviders();
         tempProviders.forEach(provider -> transportProviderComboBox.getItems().add(provider.name()));
         transportProviderComboBox.getItems().add("nicht angegeben");
+        transportProviderComboBox.setDisable(true);
         if(user.role() == UserRole.SuperUser && existingTransport.transportProvider().equals(COptional.empty())){
             ServiceProvider transportProvider = existingTransport.transportProvider().equals(COptional.empty()) ? null : TransportDetailsController.getTransportproviderFromReference(existingTransport.transportProvider());
             transportProviderComboBox.setValue(transportProvider == null ? "nicht angegeben" : transportProvider.name());
+            transportProviderComboBox.setDisable(false);
 
         } else if(user.role() == UserRole.SuperUser) {
             ServiceProvider transportProvider = tempProviders.stream()
@@ -96,6 +98,15 @@ public class TransportDetailsCreationScreen {
                     .orElse(null);
             transportProviderComboBox.setValue(transportProvider == null ? "nicht angegeben" : transportProvider.name());
             transportProviderComboBox.setDisable(true);
+        } else if(!existingTransport.transportProvider().equals(COptional.empty())){
+            ServiceProvider transportProvider = tempProviders.stream()
+                    .filter(provider -> provider.id().equals(existingTransport.transportProvider().get().id()))
+                    .findFirst()
+                    .orElse(null);
+            transportProviderComboBox.setValue(transportProvider == null ? "nicht angegeben" : transportProvider.name());
+            transportProviderComboBox.setDisable(true);
+
+
         } else{
             ServiceProvider userProvider = tempProviders.stream()
                     .filter(provider -> provider.id().equals(user.serviceProvider().id()))
@@ -104,7 +115,7 @@ public class TransportDetailsCreationScreen {
             transportProviderComboBox.setValue(userProvider == null ? "nicht angegeben" : userProvider.name());
             transportProviderComboBox.setDisable(true);
         }
-        transportProviderComboBox.setDisable(isLocked);
+        //transportProviderComboBox.setDisable(isLocked);
 
         // Tour Number Label
         String tourNumber = existingTransport.tourNumber().equals(COptional.empty()) ? "" : existingTransport.tourNumber().get();
