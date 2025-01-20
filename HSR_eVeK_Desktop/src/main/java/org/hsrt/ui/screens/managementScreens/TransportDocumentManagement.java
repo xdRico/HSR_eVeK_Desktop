@@ -357,8 +357,8 @@ public class TransportDocumentManagement {
             try {
                 System.out.println("Submit Button clicked");
                 // Extrahiere die Werte aus den Eingabefeldern
-                COptional<Reference<Patient>> patientOpt = COptional.ofNullable(new Reference<>(new Id<>(patientField.getText().isEmpty() ? null : patientField.getText())));
-                COptional<Reference<InsuranceData>> insuranceDataOpt = COptional.ofNullable(new Reference<>(new Id<>(insuranceField.getText().isEmpty() ? null : insuranceField.getText())));
+                COptional<Reference<Patient>> patientOpt = patientField.getText().isEmpty() ? COptional.empty() : COptional.of(new Reference<>(new Id<>(patientField.getText())));
+                COptional<Reference<InsuranceData>> insuranceDataOpt = insuranceField.getText().isEmpty() ? COptional.empty() : COptional.of(new Reference<>(new Id<>(insuranceField.getText())));
 
                 // Extrahiere den Transportgrund aus dem ToggleGroup
                 TransportReason transportReason = switch (reasonGroup.getSelectedToggle()) {

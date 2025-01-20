@@ -137,4 +137,28 @@ public class TransportDetailsController {
             throw new RuntimeException("Fehler beim Löschen des Transports", e);
         }
     }
+
+    public static TransportDetails getTransportFromReference(String text) {
+        try {
+            return executor.submit(() -> {
+                DataHandler dataHandler = DataHandler.instance();
+                dataHandler.initServerConnection();
+                return dataHandler.getTransportFromReference(text);
+            }).get();
+        } catch (Exception e) {
+            throw new RuntimeException("Fehler beim Abrufen des Transports", e);
+        }
+    }
+
+    public static TransportDocument getTransportDocumentFromReference(Reference<TransportDocument> transportDocumentReference) {
+        try {
+            return executor.submit(() -> {
+                DataHandler dataHandler = DataHandler.instance();
+                dataHandler.initServerConnection();
+                return dataHandler.getTransportDocumentById(transportDocumentReference.id());
+            }).get();
+        } catch (Exception e) {
+            throw new RuntimeException("Fehler beim Abrufen des Transportdokuments", e);
+        }
+    }
 }

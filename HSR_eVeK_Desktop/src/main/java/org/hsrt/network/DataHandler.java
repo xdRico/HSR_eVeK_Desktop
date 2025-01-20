@@ -108,18 +108,12 @@ public class DataHandler implements IsInitializedListener {
                                                      COptional<String> additionalInfo) throws ProcessingException {
 
 
-        if(patient.get().id() == null){
-            patient = COptional.empty();
-        }
-        if(insuranceData.get().id() == null){
-            insuranceData = COptional.empty();
-        }
 
 
 
 
         try {
-            TransportDocument.Create cmd = new TransportDocument.Create(patient, insuranceData, transportReason, startDate, endDate,
+            TransportDocument.Create cmd = new TransportDocument.Create(patient.equals(COptional.empty()) ? COptional.empty() : patient, insuranceData.equals(COptional.empty()) ? COptional.empty() : insuranceData, transportReason, startDate, endDate,
                     weeklyFrequency, healthcareServiceProvider, transportationType, additionalInfo, Reference.to(loggedInUser.id().value()));
             sender.sendTransportDocument(cmd);
             System.out.println("Transport Document sent");
@@ -211,6 +205,7 @@ public class DataHandler implements IsInitializedListener {
             // Liste leeren
             transportDetails.clear();
 
+
             // Anfrage senden
             sender.sendTransportDetails(new TransportDetails.GetList(
                     new TransportDetails.Filter(
@@ -218,7 +213,7 @@ public class DataHandler implements IsInitializedListener {
                             COptional.empty(),
                             COptional.empty(),
                             COptional.empty(),
-                            COptional.empty()
+                            loggedInUser.role() != UserRole.SuperUser ? COptional.of(loggedInUser.serviceProvider()) : COptional.empty()
                     )
             ));
 
@@ -250,9 +245,12 @@ public class DataHandler implements IsInitializedListener {
             TransportDetails.Create cmd = new TransportDetails.Create(Reference.to(transportDocument.id()), sqlDate);
             sender.sendTransportDetails(cmd);
             System.out.println(cmd);
-            return receiver.receiveTransportDetails();
+            TransportDetails newTransportDetails = receiver.receiveTransportDetails();
+            System.out.println(newTransportDetails);
+            return newTransportDetails;
         } catch (Exception e) {
             Log.sendException(e);
+            System.out.println("FEHLER");
             return null;
         }
     }
@@ -356,6 +354,16 @@ public class DataHandler implements IsInitializedListener {
             receiver.receiveTransportDetails();
         } catch (Exception e) {
             Log.sendException(e);
+        }
+    }
+
+    public TransportDetails getTransportFromReference(String transportReference) {
+        try {
+            sender.sendTransportDetails(new TransportDetails.Get(new Id<TransportDetails>(transportReference)));
+            return receiver.receiveTransportDetails();
+        } catch (Exception e) {
+            Log.sendException(e);
+            return null;
         }
     }
 }

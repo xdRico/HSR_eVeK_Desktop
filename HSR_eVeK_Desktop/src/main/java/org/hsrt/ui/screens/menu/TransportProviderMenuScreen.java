@@ -13,6 +13,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import org.hsrt.ui.screens.creationScreens.TransportDetailsCreationScreen;
 import org.hsrt.ui.screens.managementScreens.InvoiceManagement;
 import org.hsrt.ui.screens.managementScreens.TransportDocumentManagement;
 import org.hsrt.ui.screens.managementScreens.UserManagement;
@@ -52,8 +53,13 @@ public class TransportProviderMenuScreen extends Application {
             VBox buttonBox = new VBox(20);
             buttonBox.setAlignment(Pos.CENTER);
 
-            if (user.role() == UserRole.HealthcareAdmin || user.role() == UserRole.HealthcareDoctor || user.role() == UserRole.HealthcareUser || user.role() == UserRole.TransportDoctor || user.role() == UserRole.TransportAdmin || user.role() == UserRole.TransportUser || user.role() == UserRole.SuperUser) {
-                Button transportDocumentButton = createCategoryButton("Transport Document Management", new TransportDocumentManagement().createTransportDocumentManagement(user));
+            if (user.role() == UserRole.HealthcareDoctor || user.role() == UserRole.HealthcareUser || user.role() == UserRole.TransportDoctor || user.role() == UserRole.SuperUser) {
+                Button transportDocumentButton = createCategoryButton("Transport Dokumenten Verwaltung", new TransportDocumentManagement().createTransportDocumentManagement(user));
+                buttonBox.getChildren().add(transportDocumentButton);
+            }
+
+            if(user.role() == UserRole.TransportUser || user.role() == UserRole.SuperUser){
+                Button transportDocumentButton = createCategoryButton("Transport zuweisen", new TransportDetailsCreationScreen().assignTransport(user));
                 buttonBox.getChildren().add(transportDocumentButton);
             }
 
