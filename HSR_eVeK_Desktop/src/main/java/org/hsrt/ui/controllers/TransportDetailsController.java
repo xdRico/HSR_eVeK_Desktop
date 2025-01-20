@@ -25,11 +25,14 @@ public class TransportDetailsController {
      * @param transportDocument The transport document to fetch transports for.
      * @return A list of all transports.
      */
-    public static ObservableList<TransportDetails> getTransports(TransportDocument transportDocument) {
+    public static ObservableList<TransportDetails> getTransports(TransportDocument transportDocument, User user) {
         try {
             return executor.submit(() -> {
                 DataHandler dataHandler = DataHandler.instance();
                 dataHandler.initServerConnection();
+                if(user.role() == UserRole.HealthcareDoctor || user.role() == UserRole.HealthcareUser) {
+                    return FXCollections.observableArrayList(dataHandler.getCreatedTransports(transportDocument));
+                }
                 return FXCollections.observableArrayList(dataHandler.refreshTransports(transportDocument));
             }).get(); // Warten auf das Ergebnis
         } catch (Exception e) {

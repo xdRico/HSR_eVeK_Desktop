@@ -130,4 +130,30 @@ public class TransportDocumentController {
         }
         return insuranceData;
     }
+
+    public static ServiceProvider getHealthcareProvider( User user) {
+        DataHandler dataHandler = DataHandler.instance();
+        // Initialisiere die Serververbindung
+        dataHandler.initServerConnection();
+
+        // Warte, bis die Verbindung initialisiert ist
+        while (!dataHandler.isInitialized()) {
+            try {
+                Thread.sleep(100); // Warte 100ms
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        ServiceProvider healthcareProvider = null;
+
+        try {
+            healthcareProvider = dataHandler.getHealthcareProvider(user);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return healthcareProvider;
+
+    }
 }

@@ -264,6 +264,11 @@ public class TransportDocumentManagement {
         treatmentFacilityField.setPromptText("Behandlungsstättenkürzel eingeben");
         if(existingDocument != null && existingDocument.healthcareServiceProvider() != null) {
             treatmentFacilityField.setText(existingDocument.healthcareServiceProvider().toString());
+        } else if (user.role() == UserRole.HealthcareUser || user.role() == UserRole.HealthcareDoctor) {
+            ServiceProvider healthcareProvider = TransportDocumentController.getHealthcareProvider(user);
+            treatmentFacilityField.setText(healthcareProvider.id().toString());
+
+
         }
 
         TextField weeklyTripsField = new TextField();

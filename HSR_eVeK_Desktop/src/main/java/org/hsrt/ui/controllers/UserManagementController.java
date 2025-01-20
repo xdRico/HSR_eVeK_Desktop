@@ -5,6 +5,8 @@ import de.ehealth.evek.api.entity.ServiceProvider;
 import de.ehealth.evek.api.entity.User;
 import de.ehealth.evek.api.type.Reference;
 import de.ehealth.evek.api.type.UserRole;
+import javafx.collections.ObservableList;
+import org.hsrt.network.DataHandler;
 
 import java.util.List;
 
@@ -13,22 +15,23 @@ import java.util.List;
  */
 
 public class UserManagementController {
-    static Reference<ServiceProvider> serviceProviderref = Reference.to("tub");
-    static Reference<Address> addressReference = Reference.to("address");
+    public static void updateUser(User updatedUser) {
+        DataHandler dataHandler = DataHandler.instance();
+        dataHandler.initServerConnection();
+        dataHandler.updateUser(updatedUser);
+    }
 
     /**
      * Fetches all users from the database or API.
      *
      * @return A list of all users.
      */
-    public List<User> fetchUsersFromAPI() {
-        // Simulate API call or database query
-        // TODO Replace this with actual implementation using your backend service
-        System.out.println("Fetching users from API...");
-        return List.of(
-                new User(null, "Doe", "John", addressReference,serviceProviderref , UserRole.HealthcareUser),
-                new User(null, "Smith", "Jane", addressReference,serviceProviderref , UserRole.InsuranceAdmin)
-        );
+    public ObservableList<User> fetchUsersFromAPI(User user) {
+        DataHandler dataHandler = DataHandler.instance();
+        dataHandler.initServerConnection();
+
+        return dataHandler.getUsers(user);
+
     }
 
     /**
@@ -36,9 +39,9 @@ public class UserManagementController {
      *
      * @param user The user to save.
      */
-    public static boolean saveUser(User user) {
-        // TODO Logic to save the user to the database or backend
-        System.out.println("User saved: " + user);
-        return true;
+    public static User saveUser(User user, String username, String password) {
+        DataHandler dataHandler = DataHandler.instance();
+        dataHandler.initServerConnection();
+        return dataHandler.createUser(user, username, password);
     }
 }

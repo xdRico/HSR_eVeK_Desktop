@@ -8,14 +8,15 @@ import de.ehealth.evek.api.network.IComClientSender;
 import de.ehealth.evek.api.type.*;
 import de.ehealth.evek.api.util.COptional;
 import de.ehealth.evek.api.util.Log;
+import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import org.hsrt.network.config.SocketConfig;
 
 import java.io.IOException;
 import java.sql.Date;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
@@ -35,6 +36,7 @@ public class DataHandler implements IsInitializedListener {
 
     private final ObservableList<TransportDocument> transportDocuments = FXCollections.observableArrayList();
     private final ObservableList<TransportDetails> transportDetails = FXCollections.observableArrayList();
+    private final ObservableList<TransportDetails> createdTransports = FXCollections.observableArrayList();
 
     private IComClientReceiver receiver;
     private IComClientSender sender;
@@ -151,7 +153,7 @@ public class DataHandler implements IsInitializedListener {
         try {
             transportDocuments.clear();
 
-            sender.sendTransportDocument(new TransportDocument.GetList(new TransportDocument.Filter(COptional.empty(), COptional.empty(), COptional.empty(), COptional.empty(), COptional.of(loggedInUser.serviceProvider()), COptional.empty(), COptional.empty())));
+            sender.sendTransportDocument(new TransportDocument.GetList(new TransportDocument.Filter(COptional.empty(), COptional.empty(), COptional.empty(), COptional.empty(), loggedInUser.role() == UserRole.SuperUser ? COptional.empty() : COptional.of(loggedInUser.serviceProvider()), COptional.empty(), COptional.empty())));
             List<TransportDocument> tempTransportDocs = (List<TransportDocument>) receiver.receiveList();
             System.out.println(tempTransportDocs);
 
@@ -196,8 +198,8 @@ public class DataHandler implements IsInitializedListener {
         }
     }
 
-    public ObservableList<TransportDetails> getTransports(TransportDocument transportDocument) {
-        return transportDetails;
+    public ObservableList<TransportDetails> getCreatedTransports(TransportDocument transportDocument) {
+        return createdTransports.filtered(transportDetails -> transportDetails.transportDocument().equals(Reference.to(transportDocument.id())));
     }
 
     public ObservableList<TransportDetails> refreshTransports(TransportDocument transportDocument) {
@@ -233,9 +235,10 @@ public class DataHandler implements IsInitializedListener {
         } catch (Exception e) {
             // Fehler protokollieren
             Log.sendException(e);
-
+            System.err.println("Fehler beim Aktualisieren der Transporte.");
+            ObservableList<TransportDetails> emptyList = FXCollections.observableArrayList();
             // Leere Liste zurückgeben
-            return null;
+            return emptyList;
         }
     }
 
@@ -247,12 +250,18 @@ public class DataHandler implements IsInitializedListener {
             System.out.println(cmd);
             TransportDetails newTransportDetails = receiver.receiveTransportDetails();
             System.out.println(newTransportDetails);
+            addTransport(newTransportDetails);
             return newTransportDetails;
         } catch (Exception e) {
             Log.sendException(e);
             System.out.println("FEHLER");
             return null;
         }
+    }
+
+    private ObservableList<TransportDetails> addTransport(TransportDetails newTransportDetails) {
+        createdTransports.add(newTransportDetails);
+        return createdTransports;
     }
 
     public Address createAddress(Address addressOpt) {
@@ -350,6 +359,7 @@ public class DataHandler implements IsInitializedListener {
 
     public void deleteTransport(TransportDetails transport) {
         try {
+            createdTransports.remove(transport);
             sender.sendTransportDetails(new TransportDetails.Delete(transport.id()));
             receiver.receiveTransportDetails();
         } catch (Exception e) {
@@ -366,4 +376,60 @@ public class DataHandler implements IsInitializedListener {
             return null;
         }
     }
+
+    public ServiceProvider getHealthcareProvider(User user) {
+        try {
+            sender.sendServiceProvider(new ServiceProvider.Get(user.serviceProvider().id()));
+            return receiver.receiveServiceProvider();
+        } catch (Exception e) {
+            Log.sendException(e);
+            return null;
+        }
+    }
+
+    public ObservableList<User> getUsers(User user) {
+        try {
+            sender.sendUser(new User.GetList(new User.Filter(COptional.empty(), COptional.empty(), COptional.empty(), user.role() == UserRole.SuperUser ? COptional.empty() : COptional.of(user.serviceProvider()), COptional.empty())));
+            List<User> users = (List<User>) receiver.receiveList();
+            return FXCollections.observableArrayList(users);
+        } catch (Exception e) {
+            Log.sendException(e);
+            return FXCollections.observableArrayList();
+        }
+
+    }
+
+    public User createUser(User user, String username, String password) {
+        try {
+            System.out.println(user);
+            System.out.println(username);
+            System.out.println(password);
+            sender.sendUser(new User.Create(username, password, user.lastName(), user.firstName(), user.address(), user.serviceProvider(), user.role()));
+            User createdUser = receiver.receiveUser();
+            System.out.println(createdUser);
+            return createdUser;
+        } catch (Exception e) {
+            Log.sendException(e);
+            return null;
+        }
+    }
+
+    public void updateUser(User updatedUser) {
+        try {
+            sender.sendUser(new User.Update(updatedUser.id(), updatedUser.lastName(), updatedUser.firstName(), updatedUser.address(), updatedUser.serviceProvider()));
+            receiver.receiveUser();
+        } catch (Exception e) {
+            Log.sendException(e);
+        }
+    }
+
+    public void updateUserCredentials(User user, String username, String oldpassword, String newpassword) {
+        try {
+            sender.sendUser(new User.UpdateCredentials(user.id(), username, oldpassword, newpassword));
+            receiver.receiveUser();
+        } catch (Exception e) {
+            Log.sendException(e);
+        }
+    }
 }
+

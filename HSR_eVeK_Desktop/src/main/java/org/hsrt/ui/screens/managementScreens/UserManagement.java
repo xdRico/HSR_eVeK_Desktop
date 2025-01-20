@@ -2,13 +2,16 @@ package org.hsrt.ui.screens.managementScreens;
 
 import de.ehealth.evek.api.entity.Address;
 import de.ehealth.evek.api.entity.ServiceProvider;
+import de.ehealth.evek.api.entity.TransportDetails;
 import de.ehealth.evek.api.entity.User;
 import de.ehealth.evek.api.type.Reference;
 import de.ehealth.evek.api.type.UserRole;
 
+import de.ehealth.evek.api.util.COptional;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import org.hsrt.ui.controllers.TransportDetailsController;
 import org.hsrt.ui.controllers.UserManagementController;
 
 import javafx.geometry.Insets;
@@ -29,6 +32,7 @@ import java.util.stream.Collectors;
  */
 
 public class UserManagement {
+    private ObservableList<User> userList;
     private User user;
 
     /**
@@ -168,13 +172,11 @@ public class UserManagement {
             UserRole selectedRole = roleComboBox.getValue();
             String serviceProvider = serviceProviderField.getText();
 
-            Address address = new Address(null, null, street, houseNumber, country, postCode, city);
-            Reference<Address> addressref = Reference.to(String.valueOf(address));
+            Address address = TransportDetailsController.createAddress(street, houseNumber, postCode, city, country);
             Reference<ServiceProvider> serviceProviderReference = Reference.to(serviceProvider);
-            User newUser = new User(null, firstName, lastName, addressref, serviceProviderReference, selectedRole);
+            User newUser = new User(null, firstName, lastName, Reference.to(address.id()), serviceProviderReference, selectedRole);
 
-            //TODO fix this mess
-            UserManagementController.saveUser(newUser);
+            UserManagementController.saveUser(newUser, username, password);
 
             stage.close();
         });
@@ -284,17 +286,9 @@ public class UserManagement {
 
     private ObservableList<User> getFilteredUsers() {
         UserManagementController controller = new UserManagementController();
-        List<User> allUsers = controller.fetchUsersFromAPI(); // Neue API-Aufruf-Methode
+        userList = controller.fetchUsersFromAPI(user); // Neue API-Aufruf-Methode
 
-        if (user.role() == UserRole.SuperUser) {
-            return FXCollections.observableArrayList(allUsers);
-        } else {
-            return FXCollections.observableArrayList(
-                    allUsers.stream()
-                            .filter(u -> u.serviceProvider().equals(user.serviceProvider()))
-                            .collect(Collectors.toList())
-            );
-        }
+        return userList;
     }
 
     /**
@@ -319,27 +313,51 @@ public class UserManagement {
         gridPane.add(firstNameLabel, 0, 0);
         gridPane.add(firstNameField, 1, 0);
 
+
         Label lastNameLabel = new Label("Last Name:");
         TextField lastNameField = new TextField(userToEdit.lastName());
         gridPane.add(lastNameLabel, 0, 1);
         gridPane.add(lastNameField, 1, 1);
 
-        Label roleLabel = new Label("Role:");
-        ComboBox<UserRole> roleComboBox = new ComboBox<>();
-        roleComboBox.getItems().addAll(getAvailableRoles());
-        roleComboBox.setValue(userToEdit.role());
-        gridPane.add(roleLabel, 0, 2);
-        gridPane.add(roleComboBox, 1, 2);
+        Address oldAddress = TransportDetailsController.getAddressFromReference(COptional.of(userToEdit.address()));
+
+        Label streetLabel = new Label("Street:");
+        TextField streetField = new TextField(oldAddress.streetName());
+        gridPane.add(streetLabel, 0, 2);
+        gridPane.add(streetField, 1, 2);
+
+
+        Label houseNumberLabel = new Label("House Number:");
+        TextField houseNumberField = new TextField(oldAddress.houseNumber());
+        gridPane.add(houseNumberLabel, 0, 3);
+        gridPane.add(houseNumberField, 1, 3);
+
+        Label postCodeLabel = new Label("Post Code:");
+        TextField postCodeField = new TextField(oldAddress.postCode());
+        gridPane.add(postCodeLabel, 0, 4);
+        gridPane.add(postCodeField, 1, 4);
+
+        Label cityLabel = new Label("City:");
+        TextField cityField = new TextField(oldAddress.city());
+        gridPane.add(cityLabel, 0, 5);
+        gridPane.add(cityField, 1, 5);
+
+        Label countryLabel = new Label("Country:");
+        TextField countryField = new TextField(oldAddress.country());
+        gridPane.add(countryLabel, 0, 6);
+        gridPane.add(countryField, 1, 6);
+
 
         Button saveButton = new Button("Save");
         saveButton.setOnAction(e -> {
             String newFirstName = firstNameField.getText();
             String newLastName = lastNameField.getText();
-            UserRole newRole = roleComboBox.getValue();
+
+            Address newAddress = TransportDetailsController.createAddress(streetField.getText(), houseNumberField.getText(), postCodeField.getText(), cityField.getText(), countryField.getText());
 
             // Save the updated user
-            User updatedUser = userToEdit.updateWith(newLastName, newFirstName, userToEdit.address(), userToEdit.serviceProvider());
-            UserManagementController.saveUser(updatedUser);
+            User updatedUser = userToEdit.updateWith(newLastName, newFirstName, Reference.to(newAddress.id()), userToEdit.serviceProvider());
+            UserManagementController.updateUser(updatedUser);
 
             stage.close();
         });

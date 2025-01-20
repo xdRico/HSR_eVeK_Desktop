@@ -65,13 +65,13 @@ public class TransportDetailsManagement {
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
         TableView<TransportDetails> tableView = createTransportTable(transportDocument, user);
-        Button createButton = createTransportButton(transportDocument, tableView);
+        Button createButton = createTransportButton(transportDocument, tableView, user);
         vbox.getChildren().addAll(createButton, tableView);
         return vbox;
     }
 
     private TableView<TransportDetails> createTransportTable(TransportDocument transportDocument, User user) {
-        transports = TransportDetailsController.getTransports(transportDocument);
+        transports = TransportDetailsController.getTransports(transportDocument, user);
         TableView<TransportDetails> tableView = new TableView<>(transports);
         tableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         tableView.setRowFactory(tv -> createTableRow(transportDocument, user, tableView));
@@ -90,31 +90,31 @@ public class TransportDetailsManagement {
         return row;
     }
 
-    private Button createTransportButton(TransportDocument transportDocument, TableView<TransportDetails> tableView) {
+    private Button createTransportButton(TransportDocument transportDocument, TableView<TransportDetails> tableView, User user) {
         Button createButton = new Button("Neuen Transport erstellen");
         createButton.setOnAction(e -> {
-            Stage creationStage = createTransport(transportDocument);
+            Stage creationStage = createTransport(transportDocument, user);
             creationStage.showAndWait();
             tableView.setItems(transports);
         });
         return createButton;
     }
 
-    private Stage createTransport(TransportDocument transportDocument) {
+    private Stage createTransport(TransportDocument transportDocument, User user) {
         Stage stage = new Stage();
         stage.setTitle("Neuen Transport erstellen");
-        VBox vbox = createTransportForm(transportDocument);
+        VBox vbox = createTransportForm(transportDocument, user);
         Scene scene = new Scene(vbox, 1000, 600);
         stage.setScene(scene);
         return stage;
     }
 
-    private VBox createTransportForm(TransportDocument transportDocument) {
+    private VBox createTransportForm(TransportDocument transportDocument, User user) {
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
         Label dateLabel = new Label("Datum des Transports:");
         DatePicker datePicker = createDatePicker();
-        Button saveButton = createSaveButton(transportDocument, datePicker);
+        Button saveButton = createSaveButton(transportDocument, datePicker, user);
         vbox.getChildren().addAll(dateLabel, datePicker, saveButton);
         return vbox;
     }
@@ -133,7 +133,7 @@ public class TransportDetailsManagement {
         return datePicker;
     }
 
-    private Button createSaveButton(TransportDocument transportDocument, DatePicker datePicker) {
+    private Button createSaveButton(TransportDocument transportDocument, DatePicker datePicker, User user) {
         Button saveButton = new Button("Speichern");
         saveButton.setOnAction(event -> {
             LocalDate localDate = datePicker.getValue();
@@ -146,7 +146,7 @@ public class TransportDetailsManagement {
 
                 // Close the stage after saving
                 Stage stage = (Stage) saveButton.getScene().getWindow();
-                transports = TransportDetailsController.getTransports(transportDocument);
+                transports = TransportDetailsController.getTransports(transportDocument, user);
                 stage.close();
             } else {
                 System.out.println("No date selected. Transport not saved.");
@@ -216,9 +216,8 @@ public class TransportDetailsManagement {
         Label infoLabel = new Label("Optionen für Transport-ID: " + transport.id());
         Button editButton = createEditButton(transport, user, dialogStage, tableview);
         Button showQRButton = createQRButton(transport, dialogStage);
-        Button deleteButton = createDeleteButton(transport, dialogStage, tableview, transportDocument);
+        Button deleteButton = createDeleteButton(transport, dialogStage, tableview, transportDocument, user);
 
-       //TODO deleteButton nur für bestimmte User voallem nach dem Unterschreiben
         Button closeButton = createCloseButton(dialogStage);
         vbox.getChildren().addAll(infoLabel, showQRButton, editButton, deleteButton, closeButton);
         vbox.setAlignment(Pos.CENTER);
@@ -293,10 +292,10 @@ public class TransportDetailsManagement {
         return editButton;
     }
 
-    private Button createDeleteButton(TransportDetails transport, Stage dialogStage, TableView<TransportDetails> tableView, TransportDocument transportDocument) {
+    private Button createDeleteButton(TransportDetails transport, Stage dialogStage, TableView<TransportDetails> tableView, TransportDocument transportDocument, User user) {
         Button deleteButton = new Button("Löschen");
         deleteButton.setOnAction(e -> {
-            handleDeleteTransport(transport, tableView, transportDocument);
+            handleDeleteTransport(transport, tableView, transportDocument, user);
             dialogStage.close();
         });
         return deleteButton;
@@ -317,7 +316,7 @@ public class TransportDetailsManagement {
      * @param transport The transport to delete
      */
 
-    private void handleDeleteTransport(TransportDetails transport, TableView<TransportDetails> tableView, TransportDocument transportDocument) {
+    private void handleDeleteTransport(TransportDetails transport, TableView<TransportDetails> tableView, TransportDocument transportDocument, User user) {
         // Dialog für die Bestätigung
         Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
         confirmationAlert.setTitle("Bestätigung erforderlich");
@@ -329,7 +328,7 @@ public class TransportDetailsManagement {
         if (result.isPresent() && result.get() == ButtonType.OK) {
             // Transport löschen, wenn bestätigt
             TransportDetailsController.deleteTransport(transport);
-            transports = TransportDetailsController.getTransports(transportDocument);
+            transports = TransportDetailsController.getTransports(transportDocument, user);
             tableView.setItems(transports);
         } else {
             // Abbrechen, nichts tun
