@@ -75,7 +75,7 @@ public class TransportDetailsManagement {
         TableView<TransportDetails> tableView = new TableView<>(transports);
         tableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         tableView.setRowFactory(tv -> createTableRow(transportDocument, user, tableView));
-        addColumnsToTableView(tableView);
+        addColumnsToTableView(tableView, transportDocument);
         return tableView;
     }
 
@@ -164,35 +164,47 @@ public class TransportDetailsManagement {
 
     /**
      * Adds columns to the TableView.
-     * @param tableView TableView to which the columns should be added
+     *
+     * @param tableView         TableView to which the columns should be added
+     * @param transportDocument
      */
 
 
-    private void addColumnsToTableView(TableView<TransportDetails> tableView) {
+    private void addColumnsToTableView(TableView<TransportDetails> tableView, TransportDocument transportDocument) {
         TableColumn<TransportDetails, String> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().id().toString()));
 
         TableColumn<TransportDetails, String> dateColumn = new TableColumn<>("Datum");
         dateColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().transportDate().toString()));
 
-        TableColumn<TransportDetails, String> startAddressColumn = new TableColumn<>("Startadresse");
-        startAddressColumn.setCellValueFactory(data -> {
-            COptional<Reference<Address>> startAddress = data.getValue().startAddress();
+        TableColumn<TransportDetails, String> healthcareProviderColumn = new TableColumn<>("Behandlungsstätte");
+        healthcareProviderColumn.setCellValueFactory(data -> {
+            COptional<Reference<ServiceProvider>> serviceProvider = COptional.of(transportDocument.healthcareServiceProvider());
             return new SimpleStringProperty(
-                    startAddress.isPresent() ? startAddress.get().toString() : "nicht angegeben"
+                    serviceProvider.isPresent() ? serviceProvider.get().toString() : "nicht angegeben"
             );
         });
 
-        TableColumn<TransportDetails, String> endAddressColumn = new TableColumn<>("Zieladresse");
-        endAddressColumn.setCellValueFactory(data -> {
-            COptional<Reference<Address>> endAddress = data.getValue().endAddress();
+        TableColumn<TransportDetails, String> transportProviderColumn = new TableColumn<>("TransportDienstleister");
+        transportProviderColumn.setCellValueFactory(data -> {
+            COptional<Reference<ServiceProvider>> transportProvider = data.getValue().transportProvider();
             return new SimpleStringProperty(
-                    endAddress.isPresent() ? endAddress.get().toString() : "nicht angegeben"
+                    transportProvider.isPresent() ? transportProvider.get().toString() : "nicht angegeben"
             );
         });
+
+        TableColumn<Patient, String> patientColumn = new TableColumn<>("Patient");
+        patientColumn.setCellValueFactory(data -> {
+            COptional<Reference<Patient>> patient = transportDocument.patient();
+            return new SimpleStringProperty(
+                    patient.isPresent() ? patient.get().toString() : "nicht angegeben"
+            );
+        });
+
+
 
         //noinspection unchecked
-        tableView.getColumns().addAll(idColumn, dateColumn, startAddressColumn, endAddressColumn);
+        tableView.getColumns().addAll(idColumn, dateColumn, healthcareProviderColumn, transportProviderColumn);
     }
 
     /**
