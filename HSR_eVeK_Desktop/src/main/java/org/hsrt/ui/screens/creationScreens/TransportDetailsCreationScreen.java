@@ -27,7 +27,7 @@ public class TransportDetailsCreationScreen {
 
     public Stage createTransportDetailsCreationWindow(TransportDetails existingTransport,  User user) {
         Stage stage = new Stage();
-        stage.setTitle(existingTransport == null ? "Create Transport" : "Edit Transport");
+        stage.setTitle(existingTransport == null ? "Transport erstelle" : "Transport bearbeiten");
 
         VBox root = new VBox(15);
         root.setPadding(new Insets(20));
@@ -283,7 +283,8 @@ public class TransportDetailsCreationScreen {
             }
         });
 
-// Hinzufügen des Buttons zum Layout
+
+// Hinzufügen der Buttons zum Layout
         VBox content = new VBox(15, idLabel, dateLabel, datePicker, startAddressPane, endAddressPane,
                 directionLabel, directionComboBox, patientConditionLabel, patientConditionComboBox,
                 providerLabel, transportProviderComboBox, tourNumberLabel,tourNumberField, paymentExemptionLabel, paymentExemptionComboBox,
@@ -291,6 +292,23 @@ public class TransportDetailsCreationScreen {
                 transporterSignatureLabel, transporterSignatureField, confirmTransporterSignatureButton, transporterDateLabel,
                 unlockButton, errorLabel, saveButton);
 
+
+        if(user.role() == UserRole.InsuranceUser) {
+            Button closeInvoiceButton = new Button("Abrechnung abschließen");
+            closeInvoiceButton.setOnAction(event -> {
+                Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
+                confirmationAlert.setTitle("Bestätigung erforderlich");
+                confirmationAlert.setHeaderText("Abrechnung abschließen");
+                confirmationAlert.setContentText("Sind Sie sicher, dass Sie die Abrechnung abschließen möchten?");
+
+                Optional<ButtonType> result = confirmationAlert.showAndWait();
+                if (result.isPresent() && result.get() == ButtonType.OK) {
+                    TransportDetailsController.closeInvoice(existingTransport.id());
+                    stage.close();
+                }
+            });
+            content.getChildren().add(closeInvoiceButton);
+        }
         // ScrollPane
         ScrollPane scrollPane = new ScrollPane(content);
         scrollPane.setFitToWidth(true);

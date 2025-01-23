@@ -212,6 +212,8 @@ public class InvoiceManagement {
             editTransportDetailsStage.setOnHiding(e -> refreshTransportData(user));
 
             editTransportDetailsStage.showAndWait();
+
+
             dialogStage.close();
         });
         return editTransportButton;

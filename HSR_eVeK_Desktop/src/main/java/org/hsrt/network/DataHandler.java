@@ -520,5 +520,15 @@ public class DataHandler implements IsInitializedListener {
             return null;
         }
     }
+
+    public TransportDetails closeInvoice(Id<TransportDetails> id) {
+        try {
+            sender.sendTransportDetails(new TransportDetails.Close(id));
+            return receiver.receiveTransportDetails();
+        } catch (Exception e) {
+            Log.sendException(e);
+            return null;
+        }
+    }
 }
 

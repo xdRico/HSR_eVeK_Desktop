@@ -164,4 +164,16 @@ public class TransportDetailsController {
             throw new RuntimeException("Fehler beim Abrufen des Transportdokuments", e);
         }
     }
+
+    public static TransportDetails closeInvoice(Id<TransportDetails> id) {
+        try {
+            return executor.submit(() -> {
+                DataHandler dataHandler = DataHandler.instance();
+                dataHandler.initServerConnection();
+                return dataHandler.closeInvoice(id);
+            }).get();
+        } catch (Exception e) {
+            throw new RuntimeException("Fehler beim Schließen der Rechnung", e);
+        }
+    }
 }

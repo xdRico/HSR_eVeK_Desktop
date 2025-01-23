@@ -50,7 +50,7 @@ public class InsuranceMenuScreen extends Application {
         InvoiceManagement invoiceManagement = new InvoiceManagement();
         TransportDocumentManagement transportDocumentManagement = new TransportDocumentManagement();
         // Kategorie-Buttons
-       Button sentInsuranceButton = createCategoryButton("Versicherungen", transportDocumentManagement.createTransportDocumentManagement(user));
+       Button sentInsuranceButton = createCategoryButton("Transportdokumente ansehen", transportDocumentManagement.createTransportDocumentManagement(user));
 
         // Kategorie-Buttons zur VBox hinzufügen
         root.getChildren().addAll(sentInsuranceButton);

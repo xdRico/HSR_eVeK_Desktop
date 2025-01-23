@@ -187,7 +187,7 @@ public class TransportDetailsManagement {
             );
         });
 
-        TableColumn<Patient, String> patientColumn = new TableColumn<>("Patient");
+        TableColumn<TransportDetails, String> patientColumn = new TableColumn<>("Patient");
         patientColumn.setCellValueFactory(data -> {
             COptional<Reference<Patient>> patient = transportDocument.patient();
             return new SimpleStringProperty(
@@ -204,7 +204,7 @@ public class TransportDetailsManagement {
         });
 
         //noinspection unchecked
-        tableView.getColumns().addAll(idColumn, dateColumn, healthcareProviderColumn, transportProviderColumn);
+        tableView.getColumns().addAll(idColumn, dateColumn, healthcareProviderColumn, transportProviderColumn, patientColumn, processStatusColumn);
     }
 
     /**

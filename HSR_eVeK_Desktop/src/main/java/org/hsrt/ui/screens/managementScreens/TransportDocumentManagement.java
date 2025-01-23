@@ -604,7 +604,7 @@ public class TransportDocumentManagement {
             editDocumentButton.setDisable(true);
             editDocumentButton.setOpacity(0);
 
-            Button archiveButton = new Button("TransportDocument archivieren");
+            Button archiveButton = new Button("Transportdokument archivieren");
             archiveButton.setOnAction(e -> {
                 TransportDocumentController.archiveTransportDocument(transportDocument.id());
                 optionsStage.close();
