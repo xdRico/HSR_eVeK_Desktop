@@ -20,6 +20,12 @@ import org.hsrt.ui.screens.menu.TransportProviderMenuScreen;
 
 public class LoginScreen extends Application {
 
+    /**
+     * Start the login screen.
+     *
+     * @param primaryStage The primary stage to display the login screen on.
+     */
+
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Login");
@@ -41,13 +47,13 @@ public class LoginScreen extends Application {
         grid.getColumnConstraints().addAll(column1, column2);
 
         // Create UI elements
-        Label userNameLabel = new Label("Username:");
+        Label userNameLabel = new Label("Benutzername:");
         TextField userNameField = new TextField();
         userNameField.setMaxWidth(200);
-        Label passwordLabel = new Label("Password:");
+        Label passwordLabel = new Label("Passwort:");
         PasswordField passwordField = new PasswordField();
         passwordField.setMaxWidth(200);
-        Button loginButton = new Button("Login");
+        Button loginButton = new Button("Anmelden");
         Label messageLabel = new Label();
 
         // Add elements to the layout
@@ -67,7 +73,7 @@ public class LoginScreen extends Application {
 
             User user = null;
             if ((user = authenticateUser(username, password)) != null) {
-                messageLabel.setText("Login successful!");
+                messageLabel.setText("Anmeldung erfolgreich!");
 
                 try {
                     if(user.role() == UserRole.HealthcareAdmin || user.role() == UserRole.HealthcareDoctor || user.role() == UserRole.HealthcareUser) {
@@ -89,7 +95,7 @@ public class LoginScreen extends Application {
                     e.printStackTrace();
                 }
             } else {
-                messageLabel.setText("Invalid username or password.");
+                messageLabel.setText("Unzulässiger Benutzername.");
             }
         });
 
@@ -100,9 +106,23 @@ public class LoginScreen extends Application {
         primaryStage.show();
     }
 
+    /**
+     * Authenticate the user with the given username and password.
+     *
+     * @param username The username to authenticate.
+     * @param password The password to authenticate.
+     * @return The authenticated user, or null if the authentication failed.
+     */
+
     private User authenticateUser( String username, String password) {
         return LoginController.login( username, password);
     }
+
+    /**
+     * Start the application.
+     *
+     * @param args The command line arguments.
+     */
 
     public static void main(String[] args) {
         launch(args);

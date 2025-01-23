@@ -55,11 +55,11 @@ public class HospitalMenuScreen extends Application {
         buttonBox.setAlignment(Pos.CENTER);
 
         if (user.role() == UserRole.HealthcareAdmin || user.role() == UserRole.HealthcareDoctor || user.role() == UserRole.TransportDoctor || user.role() == UserRole.SuperUser) {
-            Button transportDocumentButton = createCategoryButton("Transport Document Management", new TransportDocumentManagement().createTransportDocumentManagement(user));
+            Button transportDocumentButton = createCategoryButton("Transportdokumenten Verwaltung", new TransportDocumentManagement().createTransportDocumentManagement(user));
             buttonBox.getChildren().add(transportDocumentButton);
         }
         if (user.role() == UserRole.HealthcareAdmin || user.role() == UserRole.SuperUser) {
-            Button userButton = createCategoryButton("User Management", new UserManagement().createUserManagement(user));
+            Button userButton = createCategoryButton("Benutzer Verwaltung", new UserManagement().createUserManagement(user));
             buttonBox.getChildren().add(userButton);
         }
 
@@ -67,7 +67,7 @@ public class HospitalMenuScreen extends Application {
 
         // Scene und Stage konfigurieren
         Scene scene = new Scene(root, 800, 600);
-        primaryStage.setTitle("Hospital Menu Screen");
+        primaryStage.setTitle("Krankenhaus Menübildschirm");
         primaryStage.setScene(scene);
         primaryStage.centerOnScreen();
         primaryStage.show();

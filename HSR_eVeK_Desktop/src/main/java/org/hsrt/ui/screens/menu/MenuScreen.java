@@ -13,12 +13,26 @@ import javafx.stage.Stage;
 
 import java.util.function.Supplier;
 
+
+/**
+ * The main menu screen of the application for Superusers.
+ */
+
 public class MenuScreen extends Application {
     private final User user;
+
+
 
     public MenuScreen(User user) {
         this.user = user;
     }
+
+    /**
+     * Starts the application and displays the main menu.
+     *
+     * @param primaryStage The main stage of the application.
+     * @throws Exception If an error occurs while starting the application.
+     */
 
     @Override
     public void start(Stage primaryStage) {
@@ -36,18 +50,26 @@ public class MenuScreen extends Application {
         VBox buttonContainer = new VBox(15);
         buttonContainer.setAlignment(Pos.CENTER);
         buttonContainer.getChildren().addAll(
-                createCategoryButton("Hospital Menu", () -> new HospitalMenuScreen(user)),
-                createCategoryButton("Insurance Menu", () -> new InsuranceMenuScreen(user)),
-                createCategoryButton("Transport Provider Menu", () -> new TransportProviderMenuScreen(user))
+                createCategoryButton("Krankenhaus Menü", () -> new HospitalMenuScreen(user)),
+                createCategoryButton("Versicherungs Menü", () -> new InsuranceMenuScreen(user)),
+                createCategoryButton("Transportdienstleister Menü", () -> new TransportProviderMenuScreen(user))
         );
         root.setCenter(buttonContainer);
 
         // Configure Scene and Stage
         Scene scene = new Scene(root, 800, 600);
-        primaryStage.setTitle("Menu Screen");
+        primaryStage.setTitle("Menü Bildschirm");
         primaryStage.setScene(scene);
+        primaryStage.centerOnScreen();
         primaryStage.show();
     }
+
+    /**
+     * Creates a new button for a category.
+     * @param text The text to display on the button.
+     * @param menuSupplier A supplier for the menu screen to open when the button is clicked.
+     * @return The created button.
+     */
 
     private Button createCategoryButton(String text, Supplier<Application> menuSupplier) {
         Button button = new Button(text);

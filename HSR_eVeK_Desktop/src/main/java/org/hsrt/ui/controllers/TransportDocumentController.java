@@ -156,4 +156,29 @@ public class TransportDocumentController {
         return healthcareProvider;
 
     }
+
+    public static TransportDocument archiveTransportDocument(Id<TransportDocument> id) {
+        DataHandler dataHandler = DataHandler.instance();
+        // Initialisiere die Serververbindung
+        dataHandler.initServerConnection();
+
+        // Warte, bis die Verbindung initialisiert ist
+        while (!dataHandler.isInitialized()) {
+            try {
+                Thread.sleep(100); // Warte 100ms
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        TransportDocument transportDocument = null;
+
+        try {
+            transportDocument = dataHandler.archiveTransportDocument(id);
+            return transportDocument;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }

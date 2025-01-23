@@ -1,14 +1,11 @@
 package org.hsrt.ui.controllers;
 
-import de.ehealth.evek.api.entity.Address;
-import de.ehealth.evek.api.entity.ServiceProvider;
 import de.ehealth.evek.api.entity.User;
-import de.ehealth.evek.api.type.Reference;
-import de.ehealth.evek.api.type.UserRole;
+
 import javafx.collections.ObservableList;
+
 import org.hsrt.network.DataHandler;
 
-import java.util.List;
 
 /**
  * Controller class for managing user data.

@@ -2,9 +2,8 @@ package org.hsrt.ui.screens.managementScreens;
 
 import de.ehealth.evek.api.entity.*;
 import de.ehealth.evek.api.type.*;
-
-
 import de.ehealth.evek.api.util.COptional;
+
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -16,6 +15,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+
 import org.hsrt.ui.controllers.TransportDocumentController;
 
 import java.sql.Date;
@@ -73,12 +73,16 @@ public class TransportDocumentManagement {
         // Spalten hinzufügen
         addColumnsToTableView(tableView);
 
-        Button createButton = new Button("Create Transport Document");
+        Button createButton = new Button("Transportdokument erstellen");
         createButton.setOnAction(e -> {
             Stage createTransportDocumentStage = createTransportDocumentCreationWindow(null);
             createTransportDocumentStage.showAndWait();
             transportDocuments = TransportDocumentController.getTransportDocuments(user);
         });
+        if(user.role() == UserRole.InsuranceUser){
+            createButton.setDisable(true);
+            createButton.setOpacity(0);
+        }
 
         vbox.getChildren().addAll(createButton, tableView);
         Scene scene = new Scene(vbox, 1000, 600);
@@ -103,49 +107,49 @@ public class TransportDocumentManagement {
         patientColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().patient().isPresent() ? data.getValue().patient().get().toString() : "N/A"));
 
-        TableColumn<TransportDocument, String> insuranceDataColumn = new TableColumn<>("Insurance Data");
+        TableColumn<TransportDocument, String> insuranceDataColumn = new TableColumn<>("Versicherungsdaten");
         insuranceDataColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().insuranceData().isPresent() ? data.getValue().insuranceData().get().toString() : "N/A"));
 
-        TableColumn<TransportDocument, String> transportReasonColumn = new TableColumn<>("Transport Reason");
+        TableColumn<TransportDocument, String> transportReasonColumn = new TableColumn<>("Transport Grund");
         transportReasonColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().transportReason() != null ? data.getValue().transportReason().toString() : "N/A"));
 
-        TableColumn<TransportDocument, String> startDateColumn = new TableColumn<>("Start Date");
+        TableColumn<TransportDocument, String> startDateColumn = new TableColumn<>("Startdatum");
         startDateColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().startDate() != null ? data.getValue().startDate().toString() : "N/A"));
 
-        TableColumn<TransportDocument, String> endDateColumn = new TableColumn<>("End Date");
+        TableColumn<TransportDocument, String> endDateColumn = new TableColumn<>("Enddatum");
         endDateColumn.setCellValueFactory(data -> {
             var endDateOptional = data.getValue().endDate();
             return new SimpleStringProperty(!data.getValue().endDate().equals(COptional.empty()) ? endDateOptional.get().toString() : "N/A");});
 
-        TableColumn<TransportDocument, String> weeklyFrequencyColumn = new TableColumn<>("Weekly Frequency");
+        TableColumn<TransportDocument, String> weeklyFrequencyColumn = new TableColumn<>("Wöchentliche Häufigkeit");
         weeklyFrequencyColumn.setCellValueFactory(data ->{
             var weeklyFrequencyOptional = data.getValue().weeklyFrequency();
             return new SimpleStringProperty(!data.getValue().weeklyFrequency().equals(COptional.empty()) ? weeklyFrequencyOptional.get().toString() : "N/A");});
 
-        TableColumn<TransportDocument, String> serviceProviderColumn = new TableColumn<>("Service Provider");
+        TableColumn<TransportDocument, String> serviceProviderColumn = new TableColumn<>("Gesundheitsdienstleister");
         serviceProviderColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().healthcareServiceProvider() != null ? data.getValue().healthcareServiceProvider().toString() : "N/A"));
 
-        TableColumn<TransportDocument, String> transportationTypeColumn = new TableColumn<>("Transportation Type");
+        TableColumn<TransportDocument, String> transportationTypeColumn = new TableColumn<>("Transportfahrzeug");
         transportationTypeColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().transportationType() != null ? data.getValue().transportationType().toString() : "N/A"));
 
-        TableColumn<TransportDocument, String> additionalInfoColumn = new TableColumn<>("Additional Info");
+        TableColumn<TransportDocument, String> additionalInfoColumn = new TableColumn<>("Zusätzliche Informationen");
         additionalInfoColumn.setCellValueFactory(data ->{
             var additionalInfoOptional = data.getValue().additionalInfo();
             return new SimpleStringProperty(!data.getValue().additionalInfo().equals(COptional.empty()) ? additionalInfoOptional.get() : "N/A");});
 
 
-        TableColumn<TransportDocument, String> signatureColumn = new TableColumn<>("Signature");
+        TableColumn<TransportDocument, String> signatureColumn = new TableColumn<>("Signatur");
         signatureColumn.setCellValueFactory(data ->
                 new SimpleStringProperty(data.getValue().signature() != null ? data.getValue().signature().toString() : "N/A"));
 
-        TableColumn<TransportDocument, String> isArchivedColumn = new TableColumn<>("Is Archived");
+        TableColumn<TransportDocument, String> isArchivedColumn = new TableColumn<>("Archivierungsstatus");
         isArchivedColumn.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().isArchived() ? "Yes" : "No"));
+                new SimpleStringProperty(data.getValue().isArchived() ? "Ja" : "Nein"));
 
 
         //noinspection unchecked
@@ -174,7 +178,7 @@ public class TransportDocumentManagement {
 
     private Stage createTransportDocumentCreationWindow(TransportDocument existingDocument) {
         Stage stage = new Stage();
-        stage.setTitle(existingDocument == null ? "Create Transport Document" : "Edit Transport Document");
+        stage.setTitle(existingDocument == null ? "Transportdokument erstellen" : "Transportdokument bearbeiten");
 
 
         VBox root = new VBox(15);
@@ -577,7 +581,7 @@ public class TransportDocumentManagement {
 
         Label infoLabel = new Label("Wählen Sie eine Aktion für das Transportdokument mit ID: " + transportDocument.id());
 
-        Button createTransportButton = new Button("Transporte anzeigen und erstellen");
+        Button createTransportButton = new Button("Transporte anzeigen " + (user.role() != UserRole.InsuranceUser ? "und bearbeiten" : ""));
         createTransportButton.setOnAction(e -> {
             Stage createTransportStage = new TransportDetailsManagement().start(transportDocument, user);
             createTransportStage.centerOnScreen();
@@ -596,6 +600,22 @@ public class TransportDocumentManagement {
         editDocumentButton.setDisable(user.role() != UserRole.HealthcareUser && user.role() != UserRole.HealthcareDoctor && user.role() != UserRole.SuperUser);
 
         root.getChildren().addAll(infoLabel, createTransportButton, editDocumentButton);
+        if(user.role() == UserRole.InsuranceUser){
+            editDocumentButton.setDisable(true);
+            editDocumentButton.setOpacity(0);
+
+            Button archiveButton = new Button("TransportDocument archivieren");
+            archiveButton.setOnAction(e -> {
+                TransportDocumentController.archiveTransportDocument(transportDocument.id());
+                optionsStage.close();
+            });
+
+            root.getChildren().add(archiveButton);
+        }
+
+
+
+
 
         Scene scene = new Scene(root, 300, 200);
         optionsStage.setScene(scene);

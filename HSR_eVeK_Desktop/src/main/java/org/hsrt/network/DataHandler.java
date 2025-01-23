@@ -41,9 +41,15 @@ public class DataHandler implements IsInitializedListener {
     private IComClientReceiver receiver;
     private IComClientSender sender;
 
+
     public DataHandler() {
 
     }
+
+    /**
+     * Initialisiert die Serververbindung.
+     */
+
 
     public void initServerConnection() {
         executorService.submit(() -> {
@@ -54,6 +60,12 @@ public class DataHandler implements IsInitializedListener {
         });
     }
 
+    /**
+     * Wird aufgerufen, wenn sich der Initialisierungszustand der Serververbindung ändert.
+     *
+     * @param isInitialized `true`, wenn die Verbindung initialisiert ist, sonst `false`.
+     */
+
     @Override
     public void onInitializedStateChanged(boolean isInitialized) {
         if (isInitialized) {
@@ -62,6 +74,12 @@ public class DataHandler implements IsInitializedListener {
         }
     }
 
+
+    /**
+     * Gibt an, ob die Serververbindung initialisiert ist.
+     *
+     * @return `true`, wenn die Verbindung initialisiert ist, sonst `false`.
+     */
 
     public boolean isInitialized() {
         return this.receiver != null && this.sender != null;
@@ -98,6 +116,9 @@ public class DataHandler implements IsInitializedListener {
         }
         return null;
     }
+
+
+
 
     public TransportDocument createTransportDocument(COptional<Reference<Patient>> patient,
                                                      COptional<Reference<InsuranceData>> insuranceData,
@@ -152,14 +173,14 @@ public class DataHandler implements IsInitializedListener {
     public ObservableList<TransportDocument> refreshTransportDocuments() throws ProcessingException {
         try {
             transportDocuments.clear();
-
-            sender.sendTransportDocument(new TransportDocument.GetList(new TransportDocument.Filter(COptional.empty(), COptional.empty(), COptional.empty(), COptional.empty(), loggedInUser.role() == UserRole.SuperUser ? COptional.empty() : COptional.of(loggedInUser.serviceProvider()), COptional.empty(), COptional.empty())));
+            sender.sendTransportDocument(new TransportDocument.GetList(new TransportDocument.Filter(COptional.empty(), COptional.empty(), COptional.empty(), COptional.empty(), COptional.empty() , COptional.empty(), COptional.empty())));
             List<TransportDocument> tempTransportDocs = (List<TransportDocument>) receiver.receiveList();
             System.out.println(tempTransportDocs);
 
             transportDocuments.addAll(tempTransportDocs);
             return transportDocuments;
         } catch (Exception e) {
+            System.out.println("Fehler beim Aktualisieren der Transportdokumente.");
             Log.sendException(e);
             throw new ProcessingException(e);
         }
@@ -215,7 +236,8 @@ public class DataHandler implements IsInitializedListener {
                             COptional.empty(),
                             COptional.empty(),
                             COptional.empty(),
-                            loggedInUser.role() != UserRole.SuperUser ? COptional.of(loggedInUser.serviceProvider()) : COptional.empty()
+                            COptional.empty(),
+                            COptional.empty()
                     )
             ));
 
@@ -429,6 +451,73 @@ public class DataHandler implements IsInitializedListener {
             receiver.receiveUser();
         } catch (Exception e) {
             Log.sendException(e);
+        }
+    }
+
+    public TransportDetails sendToInsurance(TransportDetails transport) {
+        try {
+            System.out.println(transport);
+            sender.sendTransportDetails(new TransportDetails.Invoice(transport.id()));
+            TransportDetails sentTransport = receiver.receiveTransportDetails();
+            System.out.println(sentTransport);
+
+            return sentTransport;
+        } catch (Exception e) {
+            Log.sendException(e);
+            return null;
+        }
+    }
+
+    public ObservableList<TransportDetails> getPendingInvoiceTransports(User user) {
+        try {
+            System.out.println(user.serviceProvider());
+            sender.sendTransportDetails(new TransportDetails.GetList(new TransportDetails.Filter(COptional.empty(), COptional.empty(), COptional.empty(), COptional.empty() , COptional.of(loggedInUser.serviceProvider()) ,COptional.of(ProcessingState.signed))));
+            List<TransportDetails> transports = (List<TransportDetails>) receiver.receiveList();
+            System.out.println(transports);
+            return FXCollections.observableArrayList(transports);
+        }
+        catch (Exception e) {
+            Log.sendException(e);
+            System.out.println("FEHLER getPendingInvoiceTransports");
+            System.out.println(e);
+            return FXCollections.observableArrayList();
+        }
+
+    }
+
+    public ObservableList<TransportDetails> getSentInvoiceTransports(User user) {
+        try{
+            sender.sendTransportDetails(new TransportDetails.GetList(new TransportDetails.Filter(COptional.empty(), COptional.empty(), COptional.empty(), COptional.empty() , COptional.of(loggedInUser.serviceProvider()) ,COptional.of(ProcessingState.invoiced))));
+            List<TransportDetails> transports = (List<TransportDetails>) receiver.receiveList();
+            System.out.println("gesendete Transports" + transports);
+            return FXCollections.observableArrayList(transports);
+        }
+        catch (Exception e) {
+            System.out.println("FEHLER getSentInvoiceTransports");
+            Log.sendException(e);
+            return FXCollections.observableArrayList();
+        }
+    }
+
+    public ObservableList<Insurance> getInsurances(User user) {
+        try {
+            sender.sendInsurance(new Insurance.GetList(new Insurance.Filter(COptional.empty(),COptional.empty())));
+            List<Insurance> insurances = (List<Insurance>) receiver.receiveList();
+            return FXCollections.observableArrayList(insurances);
+        } catch (Exception e) {
+            Log.sendException(e);
+            return FXCollections.observableArrayList();
+        }
+
+    }
+
+    public TransportDocument archiveTransportDocument(Id<TransportDocument> id) {
+        try {
+            sender.sendTransportDocument(new TransportDocument.Archive(id));
+            return receiver.receiveTransportDocument();
+        } catch (Exception e) {
+            Log.sendException(e);
+            return null;
         }
     }
 }

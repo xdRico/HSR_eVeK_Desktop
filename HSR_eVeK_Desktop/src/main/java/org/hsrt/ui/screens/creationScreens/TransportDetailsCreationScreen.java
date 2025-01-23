@@ -122,6 +122,7 @@ public class TransportDetailsCreationScreen {
         Label tourNumberLabel = new Label("Tournummer: ");
         TextField tourNumberField = new TextField();
         tourNumberField.setText(tourNumber);
+        tourNumberField.setDisable(isLocked);
 
         // Payment Exemption ComboBox
         Label paymentExemptionLabel = new Label("Zahlungsbefreiung:");
@@ -134,6 +135,7 @@ public class TransportDetailsCreationScreen {
         Label patientSignatureLabel = new Label("Patientenunterschrift:");
         TextField patientSignatureField = new TextField();
         patientSignatureField.setText(existingTransport.patientSignature().equals(COptional.empty()) ? "" : existingTransport.patientSignature().get());
+        patientSignatureField.setDisable(isLocked);
         Button confirmPatientSignatureButton = new Button("Bestätigen");
         COptional<Date> patientSignatureDate = existingTransport.patientSignatureDate().equals(COptional.empty()) ? null : existingTransport.patientSignatureDate();
         Label patientDateLabel = new Label(patientSignatureDate == null ? "nicht bestätigt" : patientSignatureDate.get().toString());
@@ -143,6 +145,7 @@ public class TransportDetailsCreationScreen {
         Label transporterSignatureLabel = new Label("Transporteurunterschrift:");
         TextField transporterSignatureField = new TextField();
         transporterSignatureField.setText(existingTransport.transporterSignature().equals(COptional.empty()) ? "" : existingTransport.transporterSignature().get());
+        transporterSignatureField.setDisable(isLocked);
         Button confirmTransporterSignatureButton = new Button("Bestätigen");
         COptional<Date> transporterSignatureDate = existingTransport.transporterSignatureDate().equals(COptional.empty()) ? null : existingTransport.transporterSignatureDate();
         Label transporterDateLabel = new Label(transporterSignatureDate == null ? "nicht bestätigt" : transporterSignatureDate.get().toString());
@@ -253,7 +256,12 @@ public class TransportDetailsCreationScreen {
 
         // Hinzufügen eines "Entsperren"-Buttons
         Button unlockButton = new Button("Entsperren");
-        unlockButton.setDisable(!isLocked); // Button nur aktiv, wenn der Transport gesperrt ist
+        if(user.role() == UserRole.InsuranceUser){
+            unlockButton.setDisable(true);
+        }else{
+            unlockButton.setDisable(!isLocked); // Button nur aktiv, wenn der Transport gesperrt ist
+        }
+
         unlockButton.setOnAction(event -> {
             // Bestätigungsdialog anzeigen
             Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -264,7 +272,7 @@ public class TransportDetailsCreationScreen {
             // Benutzeraktion abfragen
             Optional<ButtonType> result = confirmationAlert.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK) {
-                TransportDetails newTransport = new TransportDetails(existingTransport.id(), existingTransport.transportDocument(), existingTransport.transportDate(), existingTransport.startAddress(), existingTransport.endAddress(), existingTransport.direction(), existingTransport.patientCondition(), existingTransport.transportProvider(), existingTransport.tourNumber(), existingTransport.paymentExemption(), COptional.empty(), COptional.empty(), COptional.empty(), COptional.empty());
+                TransportDetails newTransport = new TransportDetails(existingTransport.id(), existingTransport.transportDocument(), existingTransport.transportDate(), existingTransport.startAddress(), existingTransport.endAddress(), existingTransport.direction(), existingTransport.patientCondition(), existingTransport.transportProvider(), existingTransport.tourNumber(), existingTransport.paymentExemption(), COptional.empty(), COptional.empty(), COptional.empty(), COptional.empty(), existingTransport.processingState());
                 Stage newstage = createTransportDetailsCreationWindow(newTransport, user);
                 stage.close();
 
@@ -301,11 +309,15 @@ public class TransportDetailsCreationScreen {
     }
 
     private DatePicker createDatePicker() {
+        return getDatePicker();
+    }
+
+    public static DatePicker getDatePicker() {
         DatePicker datePicker = new DatePicker();
         datePicker.setOnAction(event -> {
             LocalDate localDate = datePicker.getValue();
             if (localDate != null) {
-                java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
+                Date sqlDate = Date.valueOf(localDate);
                 System.out.println("Transportdatum: " + sqlDate);
             } else {
                 System.out.println("Kein Datum ausgewählt.");

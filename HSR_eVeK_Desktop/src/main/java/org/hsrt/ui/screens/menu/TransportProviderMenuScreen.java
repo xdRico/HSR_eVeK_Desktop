@@ -64,19 +64,20 @@ public class TransportProviderMenuScreen extends Application {
             }
 
             if (user.role() == UserRole.HealthcareAdmin || user.role() == UserRole.SuperUser || user.role() == UserRole.TransportAdmin || user.role() == UserRole.InsuranceAdmin) {
-                Button userButton = createCategoryButton("User Management", new UserManagement().createUserManagement(user));
+                Button userButton = createCategoryButton("Benutzer Verwaltung", new UserManagement().createUserManagement(user));
                 buttonBox.getChildren().add(userButton);
             }
 
             if (user.role() == UserRole.TransportInvoice || user.role() == UserRole.SuperUser){
-                Button invoiceButton = createCategoryButton("Invoice Management", new InvoiceManagement().createInvoiceManagement(user));
+                Button invoiceButton = createCategoryButton("Abrechnungsverwaltung", new InvoiceManagement().createInvoiceManagement(user));
+                buttonBox.getChildren().add(invoiceButton);
             }
 
             root.setCenter(buttonBox);
 
             // Scene und Stage konfigurieren
             Scene scene = new Scene(root, 800, 600);
-            primaryStage.setTitle("Transport Menu Screen");
+            primaryStage.setTitle("Transport Menübildschirm");
             primaryStage.setScene(scene);
             primaryStage.centerOnScreen();
             primaryStage.show();

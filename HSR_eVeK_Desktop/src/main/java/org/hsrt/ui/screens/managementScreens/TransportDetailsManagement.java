@@ -3,13 +3,12 @@ package org.hsrt.ui.screens.managementScreens;
 import de.ehealth.evek.api.entity.*;
 import de.ehealth.evek.api.type.*;
 import de.ehealth.evek.api.util.COptional;
+import de.ehealth.evek.api.type.ProcessingState;
 
 import javafx.collections.ObservableList;
-
 import javafx.scene.image.WritableImage;
-
-import org.hsrt.ui.controllers.TransportDetailsController;
-
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -20,18 +19,17 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
-
-
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.image.ImageView;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.common.BitMatrix;
 
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.image.ImageView;
 import org.hsrt.ui.screens.creationScreens.TransportDetailsCreationScreen;
+import org.hsrt.ui.controllers.TransportDetailsController;
 
 import java.awt.image.BufferedImage;
 
@@ -39,6 +37,7 @@ import java.time.LocalDate;
 
 import java.util.Optional;
 
+import static org.hsrt.ui.screens.creationScreens.TransportDetailsCreationScreen.getDatePicker;
 
 
 /**
@@ -66,6 +65,10 @@ public class TransportDetailsManagement {
         vbox.setPadding(new Insets(10));
         TableView<TransportDetails> tableView = createTransportTable(transportDocument, user);
         Button createButton = createTransportButton(transportDocument, tableView, user);
+        if(user.role() == UserRole.InsuranceUser){
+            createButton.setDisable(true);
+            createButton.setOpacity(0);
+        }
         vbox.getChildren().addAll(createButton, tableView);
         return vbox;
     }
@@ -95,6 +98,7 @@ public class TransportDetailsManagement {
         createButton.setOnAction(e -> {
             Stage creationStage = createTransport(transportDocument, user);
             creationStage.showAndWait();
+            transports = TransportDetailsController.getTransports(transportDocument, user);
             tableView.setItems(transports);
         });
         return createButton;
@@ -120,17 +124,7 @@ public class TransportDetailsManagement {
     }
 
     private DatePicker createDatePicker() {
-        DatePicker datePicker = new DatePicker();
-        datePicker.setOnAction(event -> {
-            LocalDate localDate = datePicker.getValue();
-            if (localDate != null) {
-                java.sql.Date sqlDate = java.sql.Date.valueOf(localDate);
-                System.out.println("Transportdatum: " + sqlDate);
-            } else {
-                System.out.println("Kein Datum ausgewählt.");
-            }
-        });
-        return datePicker;
+        return getDatePicker();
     }
 
     private Button createSaveButton(TransportDocument transportDocument, DatePicker datePicker, User user) {
@@ -166,7 +160,7 @@ public class TransportDetailsManagement {
      * Adds columns to the TableView.
      *
      * @param tableView         TableView to which the columns should be added
-     * @param transportDocument
+     * @param transportDocument The transport document for which the columns should be added
      */
 
 
@@ -201,7 +195,13 @@ public class TransportDetailsManagement {
             );
         });
 
-
+        TableColumn<TransportDetails, String> processStatusColumn = new TableColumn<>("Bearbeitungsstatus");
+        processStatusColumn.setCellValueFactory(data -> {
+            ProcessingState processStatus = data.getValue().processingState();
+            return new SimpleStringProperty(
+                    processStatus != null ? processStatus.toString() : "nicht angegeben"
+            );
+        });
 
         //noinspection unchecked
         tableView.getColumns().addAll(idColumn, dateColumn, healthcareProviderColumn, transportProviderColumn);
@@ -226,12 +226,16 @@ public class TransportDetailsManagement {
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
         Label infoLabel = new Label("Optionen für Transport-ID: " + transport.id());
-        Button editButton = createEditButton(transport, user, dialogStage, tableview);
+        Button editButton = createEditButton(transport, user, dialogStage, tableview, transportDocument);
         Button showQRButton = createQRButton(transport, dialogStage);
         Button deleteButton = createDeleteButton(transport, dialogStage, tableview, transportDocument, user);
 
-        Button closeButton = createCloseButton(dialogStage);
-        vbox.getChildren().addAll(infoLabel, showQRButton, editButton, deleteButton, closeButton);
+        if(user.role() == UserRole.InsuranceUser){
+            deleteButton.setDisable(true);
+            deleteButton.setOpacity(0);
+        }
+
+        vbox.getChildren().addAll(infoLabel, showQRButton, editButton, deleteButton);
         vbox.setAlignment(Pos.CENTER);
         return vbox;
     }
@@ -257,11 +261,21 @@ public class TransportDetailsManagement {
         vbox.setPadding(new Insets(10));
         Label infoLabel = new Label("QR-Code für Transport-ID: " + transport.id());
         ImageView qrCodeView = new ImageView(qrCodeImage);
+        Button copyButton = new Button("ID kopieren");
         Button closeButton = new Button("Schließen");
+
+        // Kopierfunktionalität hinzufügen
+        copyButton.setOnAction(e -> {
+            Clipboard clipboard = Clipboard.getSystemClipboard();
+            ClipboardContent content = new ClipboardContent();
+            content.putString(transport.id().toString());
+            clipboard.setContent(content);
+        });
+
         closeButton.setOnAction(e -> stage.close());
 
         // Elemente zur Oberfläche hinzufügen
-        vbox.getChildren().addAll(infoLabel, qrCodeView, closeButton);
+        vbox.getChildren().addAll(infoLabel, qrCodeView, copyButton, closeButton);
 
         Scene scene = new Scene(vbox);
         stage.setScene(scene);
@@ -292,11 +306,12 @@ public class TransportDetailsManagement {
         }
     }
 
-    private Button createEditButton(TransportDetails transport, User user, Stage dialogStage, TableView<TransportDetails> tableview) {
-        Button editButton = new Button("Bearbeiten");
+    private Button createEditButton(TransportDetails transport, User user, Stage dialogStage, TableView<TransportDetails> tableview, TransportDocument transportDocument) {
+        Button editButton = new Button(user.role() != UserRole.InsuranceUser ? "Bearbeiten" : "Anzeigen");
         editButton.setOnAction(e -> {
             Stage editStage = new TransportDetailsCreationScreen().createTransportDetailsCreationWindow(transport, user);
             editStage.showAndWait();
+            transports = TransportDetailsController.getTransports(transportDocument, user);
             tableview.setItems(transports);
             dialogStage.close();
         });
@@ -313,11 +328,7 @@ public class TransportDetailsManagement {
         return deleteButton;
     }
 
-    private Button createCloseButton(Stage dialogStage) {
-        Button closeButton = new Button("Schließen");
-        closeButton.setOnAction(e -> dialogStage.close());
-        return closeButton;
-    }
+
 
 
 

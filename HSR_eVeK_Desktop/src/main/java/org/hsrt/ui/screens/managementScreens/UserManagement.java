@@ -2,18 +2,17 @@ package org.hsrt.ui.screens.managementScreens;
 
 import de.ehealth.evek.api.entity.Address;
 import de.ehealth.evek.api.entity.ServiceProvider;
-import de.ehealth.evek.api.entity.TransportDetails;
 import de.ehealth.evek.api.entity.User;
 import de.ehealth.evek.api.type.Reference;
 import de.ehealth.evek.api.type.UserRole;
-
 import de.ehealth.evek.api.util.COptional;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+
 import org.hsrt.ui.controllers.TransportDetailsController;
 import org.hsrt.ui.controllers.UserManagementController;
 
+
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -24,7 +23,7 @@ import javafx.stage.Stage;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 /**
  * This class represents the window for managing users.
@@ -32,7 +31,6 @@ import java.util.stream.Collectors;
  */
 
 public class UserManagement {
-    private ObservableList<User> userList;
     private User user;
 
     /**
@@ -45,19 +43,19 @@ public class UserManagement {
     public Stage createUserManagement(User user) {
         this.user = user;
         Stage stage = new Stage();
-        stage.setTitle("User  Management");
+        stage.setTitle("Benutzer Verwaltung");
 
         VBox vbox = new VBox(10);
         vbox.setAlignment(Pos.CENTER);
         vbox.setPadding(new Insets(10));
 
-        Button createUser  = new Button("Create User");
+        Button createUser  = new Button("Benutzer erstellen");
         createUser .setOnAction(e -> {
             Stage createUserStage = openCreateUserWindow();
             createUserStage.show();
         });
 
-        Button viewEditUsers = new Button("View/Edit Users");
+        Button viewEditUsers = new Button("Liste von Benutzern sehen und verwalten");
         viewEditUsers.setOnAction(e -> {
             Stage viewEditStage = openViewEditUserWindow();
             viewEditStage.show();
@@ -78,7 +76,7 @@ public class UserManagement {
 
     private Stage openCreateUserWindow() {
         Stage stage = new Stage();
-        stage.setTitle("Create User");
+        stage.setTitle("Benutzer Erstellen");
 
         GridPane gridPane = new GridPane();
         gridPane.setAlignment(Pos.CENTER);
@@ -87,61 +85,61 @@ public class UserManagement {
         gridPane.setVgap(10);
 
         // Input fields for user details
-        Label userNameLabel = new Label("Username:");
+        Label userNameLabel = new Label("Benutzername:");
         TextField userNameField = new TextField();
         gridPane.add(userNameLabel, 0, 0);
         gridPane.add(userNameField, 1, 0);
 
-        Label passwordLabel = new Label("Password:");
+        Label passwordLabel = new Label("Passwort:");
         PasswordField passwordField = new PasswordField();
         gridPane.add(passwordLabel, 0, 1);
         gridPane.add(passwordField, 1, 1);
 
 
-        Label firstNameLabel = new Label("First Name:");
+        Label firstNameLabel = new Label("Vorname:");
         TextField firstNameField = new TextField();
         gridPane.add(firstNameLabel, 0, 2);
         gridPane.add(firstNameField, 1, 2);
 
-        Label lastNameLabel = new Label("Last Name:");
+        Label lastNameLabel = new Label("Nachname:");
         TextField lastNameField = new TextField();
         gridPane.add(lastNameLabel, 0, 3);
         gridPane.add(lastNameField, 1, 3);
 
-        Label streetLabel = new Label("Street:");
+        Label streetLabel = new Label("Straße:");
         TextField streetField = new TextField();
         gridPane.add(streetLabel, 0, 4);
         gridPane.add(streetField, 1, 4);
 
-        Label houseNumberLabel = new Label("House Number:");
+        Label houseNumberLabel = new Label("Hausnummer:");
         TextField houseNumberField = new TextField();
         gridPane.add(houseNumberLabel, 0, 5);
         gridPane.add(houseNumberField, 1, 5);
 
-        Label postCodeLabel = new Label("Post Code:");
+        Label postCodeLabel = new Label("Postleitzahl:");
         TextField postCodeField = new TextField();
         gridPane.add(postCodeLabel, 0, 6);
         gridPane.add(postCodeField, 1, 6);
 
-        Label cityLabel = new Label("City:");
+        Label cityLabel = new Label("Stadt:");
         TextField cityField = new TextField();
         gridPane.add(cityLabel, 0, 7);
         gridPane.add(cityField, 1, 7);
 
-        Label countryLabel = new Label("Country:");
+        Label countryLabel = new Label("Land:");
         TextField countryField = new TextField();
         gridPane.add(countryLabel, 0, 8);
         gridPane.add(countryField, 1, 8);
 
         // Dropdown for role selection
-        Label roleLabel = new Label("Role:");
+        Label roleLabel = new Label("Benutzerrolle:");
         ComboBox<UserRole> roleComboBox = new ComboBox<>();
         roleComboBox.getItems().addAll(getAvailableRoles());
         gridPane.add(roleLabel, 0, 9);
         gridPane.add(roleComboBox, 1, 9);
 
         // TextField for ServiceProvider (user input)
-        Label serviceProviderLabel = new Label("Service Provider:");
+        Label serviceProviderLabel = new Label("Dienstleister:");
         TextField serviceProviderField = new TextField();
         gridPane.add(serviceProviderLabel, 0, 10);
         gridPane.add(serviceProviderField, 1, 10);
@@ -157,7 +155,7 @@ public class UserManagement {
         }
 
         // Create button
-        Button createButton = new Button("Create");
+        Button createButton = new Button("Benutzer erstellen");
         createButton.setDisable(true); // Initially disable the button
         createButton.setOnAction(e -> {
             String username = userNameField.getText();
@@ -182,9 +180,7 @@ public class UserManagement {
         });
 
         // Enable the button when a role is selected
-        roleComboBox.valueProperty().addListener((obs, oldValue, newValue) -> {
-            createButton.setDisable(newValue == null);
-        });
+        roleComboBox.valueProperty().addListener((obs, oldValue, newValue) -> createButton.setDisable(newValue == null));
 
         VBox vbox = new VBox(10, gridPane, createButton);
         vbox.setAlignment(Pos.CENTER);
@@ -228,7 +224,7 @@ public class UserManagement {
 
     private Stage openViewEditUserWindow() {
         Stage stage = new Stage();
-        stage.setTitle("View/Edit Users");
+        stage.setTitle("Benutzerliste");
 
         VBox vbox = new VBox(10);
         vbox.setAlignment(Pos.CENTER);
@@ -237,11 +233,11 @@ public class UserManagement {
         TableView<User> userTable = new TableView<>();
         userTable.setItems(getFilteredUsers());
 
-        TableColumn<User, String> firstNameColumn = new TableColumn<>("First Name");
+        TableColumn<User, String> firstNameColumn = new TableColumn<>("Vorname");
         firstNameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().firstName()));
-        TableColumn<User, String> lastNameColumn = new TableColumn<>("Last Name");
+        TableColumn<User, String> lastNameColumn = new TableColumn<>("Nachname");
         lastNameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().lastName()));
-        TableColumn<User, String> roleColumn = new TableColumn<>("Role");
+        TableColumn<User, String> roleColumn = new TableColumn<>("Benutzerrolle");
         roleColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().role().toString()));
 
         userTable.getColumns().addAll(firstNameColumn, lastNameColumn, roleColumn);
@@ -259,14 +255,14 @@ public class UserManagement {
             return row;
         });
 
-        Button editButton = new Button("Edit Selected User");
+        Button editButton = new Button("ausgewählten Benutzer bearbeiten");
         editButton.setOnAction(e -> {
             User selectedUser = userTable.getSelectionModel().getSelectedItem();
             if (selectedUser != null) {
                 Stage editUserStage = openEditUserWindow(selectedUser);
                 editUserStage.show();
             } else {
-                Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a user to edit.");
+                Alert alert = new Alert(Alert.AlertType.WARNING, "Bitte Benutzer auswählen");
                 alert.showAndWait();
             }
         });
@@ -286,9 +282,9 @@ public class UserManagement {
 
     private ObservableList<User> getFilteredUsers() {
         UserManagementController controller = new UserManagementController();
-        userList = controller.fetchUsersFromAPI(user); // Neue API-Aufruf-Methode
+        // Neue API-Aufruf-Methode
 
-        return userList;
+        return controller.fetchUsersFromAPI(user);
     }
 
     /**
@@ -300,7 +296,7 @@ public class UserManagement {
 
     private Stage openEditUserWindow(User userToEdit) {
         Stage stage = new Stage();
-        stage.setTitle("Edit User: " + userToEdit.firstName() + " " + userToEdit.lastName());
+        stage.setTitle("Benutzer bearbeiten: " + userToEdit.firstName() + " " + userToEdit.lastName());
 
         GridPane gridPane = new GridPane();
         gridPane.setAlignment(Pos.CENTER);
@@ -308,47 +304,47 @@ public class UserManagement {
         gridPane.setHgap(10);
         gridPane.setVgap(10);
 
-        Label firstNameLabel = new Label("First Name:");
+        Label firstNameLabel = new Label("Vorname:");
         TextField firstNameField = new TextField(userToEdit.firstName());
         gridPane.add(firstNameLabel, 0, 0);
         gridPane.add(firstNameField, 1, 0);
 
 
-        Label lastNameLabel = new Label("Last Name:");
+        Label lastNameLabel = new Label("Nachname:");
         TextField lastNameField = new TextField(userToEdit.lastName());
         gridPane.add(lastNameLabel, 0, 1);
         gridPane.add(lastNameField, 1, 1);
 
         Address oldAddress = TransportDetailsController.getAddressFromReference(COptional.of(userToEdit.address()));
 
-        Label streetLabel = new Label("Street:");
+        Label streetLabel = new Label("Straße:");
         TextField streetField = new TextField(oldAddress.streetName());
         gridPane.add(streetLabel, 0, 2);
         gridPane.add(streetField, 1, 2);
 
 
-        Label houseNumberLabel = new Label("House Number:");
+        Label houseNumberLabel = new Label("Hausnummer:");
         TextField houseNumberField = new TextField(oldAddress.houseNumber());
         gridPane.add(houseNumberLabel, 0, 3);
         gridPane.add(houseNumberField, 1, 3);
 
-        Label postCodeLabel = new Label("Post Code:");
+        Label postCodeLabel = new Label("Postleitzahl:");
         TextField postCodeField = new TextField(oldAddress.postCode());
         gridPane.add(postCodeLabel, 0, 4);
         gridPane.add(postCodeField, 1, 4);
 
-        Label cityLabel = new Label("City:");
+        Label cityLabel = new Label("Stadt:");
         TextField cityField = new TextField(oldAddress.city());
         gridPane.add(cityLabel, 0, 5);
         gridPane.add(cityField, 1, 5);
 
-        Label countryLabel = new Label("Country:");
+        Label countryLabel = new Label("Land:");
         TextField countryField = new TextField(oldAddress.country());
         gridPane.add(countryLabel, 0, 6);
         gridPane.add(countryField, 1, 6);
 
 
-        Button saveButton = new Button("Save");
+        Button saveButton = new Button("Speichern");
         saveButton.setOnAction(e -> {
             String newFirstName = firstNameField.getText();
             String newLastName = lastNameField.getText();
