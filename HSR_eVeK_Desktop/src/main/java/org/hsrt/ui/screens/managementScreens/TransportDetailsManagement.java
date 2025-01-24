@@ -78,7 +78,7 @@ public class TransportDetailsManagement {
         TableView<TransportDetails> tableView = new TableView<>(transports);
         tableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         tableView.setRowFactory(tv -> createTableRow(transportDocument, user, tableView));
-        addColumnsToTableView(tableView, transportDocument);
+        addColumnsToTableView(tableView, transportDocument, user);
         return tableView;
     }
 
@@ -164,7 +164,7 @@ public class TransportDetailsManagement {
      */
 
 
-    private void addColumnsToTableView(TableView<TransportDetails> tableView, TransportDocument transportDocument) {
+    private void addColumnsToTableView(TableView<TransportDetails> tableView, TransportDocument transportDocument, User user) {
         TableColumn<TransportDetails, String> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().id().toString()));
 
@@ -205,6 +205,17 @@ public class TransportDetailsManagement {
 
         //noinspection unchecked
         tableView.getColumns().addAll(idColumn, dateColumn, healthcareProviderColumn, transportProviderColumn, patientColumn, processStatusColumn);
+        if(user.role() == UserRole.InsuranceUser){
+            TableColumn<TransportDetails, String> invoiceInfo = new TableColumn<>("Abrechnungsdaten");
+            invoiceInfo.setCellValueFactory(data -> {
+                ServiceProvider invoice = TransportDetailsController.getTransportproviderFromReference(data.getValue().transportProvider());
+                return new SimpleStringProperty(
+                        invoice.contactInfo().isPresent() ? invoice.contactInfo().toString() : "nicht angegeben"
+                );
+            });
+            tableView.getColumns().add(invoiceInfo);
+        }
+
     }
 
     /**

@@ -19,6 +19,7 @@ import javafx.stage.Stage;
 import org.hsrt.ui.controllers.TransportDocumentController;
 
 import java.sql.Date;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
@@ -190,20 +191,22 @@ public class TransportDocumentManagement {
         // Patientendaten
         Text patientLabel = new Text("Patientendaten");
         TextField patientField = new TextField();
-        patientField.setPromptText("Eingabe Patientendaten");
+        patientField.setPromptText("Patientendaten eingeben");
         if (existingDocument != null && existingDocument.patient().isPresent()) {
             patientField.setText(existingDocument.patient().get().toString());
         }
 
         // Insurance Daten
         TextField insuranceField = new TextField();
-        insuranceField.setPromptText("Versicherungsdaten anzeigen");
+        insuranceField.setPromptText("Versicherungsdaten eingeben");
         if (existingDocument != null && existingDocument.insuranceData().isPresent()) {
             insuranceField.setText(existingDocument.insuranceData().get().toString());
         }
 
 
-        HBox patientInsuranceBox = getHBox(insuranceField, patientField);
+
+        AtomicReference<InsuranceData> insurance = new AtomicReference<InsuranceData>();
+        HBox patientInsuranceBox = getHBox(insuranceField, patientField, existingDocument, insurance);
         VBox patientBox = new VBox(5, patientLabel, patientInsuranceBox);
 
 
@@ -367,7 +370,21 @@ public class TransportDocumentManagement {
                 System.out.println("Submit Button clicked");
                 // Extrahiere die Werte aus den Eingabefeldern
                 COptional<Reference<Patient>> patientOpt = patientField.getText().isEmpty() ? COptional.empty() : COptional.of(new Reference<>(new Id<>(patientField.getText())));
-                COptional<Reference<InsuranceData>> insuranceDataOpt = insuranceField.getText().isEmpty() ? COptional.empty() : COptional.of(new Reference<>(new Id<>(insuranceField.getText())));
+                System.out.println("Patient: " + patientOpt);
+                AtomicReference<COptional<Reference<InsuranceData>>> insuranceDataOpt = new AtomicReference<>(COptional.empty());
+                System.out.println("Insurance: " + insuranceDataOpt);
+                patientInsuranceBox.getChildren().forEach(child -> {
+                    if (child instanceof HBox) {
+                        HBox hBox = (HBox) child;
+                        TextField insuranceStatusField = (TextField) hBox.getChildren().get(3);
+
+                        InsuranceData insuranceData = TransportDocumentController.createInsuranceData(patientOpt, Reference.to(new Id<>(insuranceField.getText())), insuranceStatusField.getText());
+                        if (insuranceData != null) {
+                            insuranceDataOpt.set(COptional.of(Reference.to(insuranceData.id())));
+                        }
+
+                    }
+                });
 
                 // Extrahiere den Transportgrund aus dem ToggleGroup
                 TransportReason transportReason = switch (reasonGroup.getSelectedToggle()) {
@@ -412,7 +429,7 @@ public class TransportDocumentManagement {
                     newDocument = TransportDocumentController.updateTransportDocument(
                             existingDocument.id(),
                             patientOpt,
-                            insuranceDataOpt,
+                            insuranceDataOpt.get(),
                             transportReason,
                             startDate,
                             endDateOpt,
@@ -423,7 +440,7 @@ public class TransportDocumentManagement {
                     );
                 }else {
                     newDocument = TransportDocumentController.createTransportDocument(
-                            patientOpt, insuranceDataOpt, transportReason, startDate, endDateOpt,
+                            patientOpt, insuranceDataOpt.get(), transportReason, startDate, endDateOpt,
                             weeklyFrequencyOpt, healthcareServiceProvider, transportationType, additionalInfoOpt
                     );
                 }
@@ -463,16 +480,30 @@ public class TransportDocumentManagement {
         return stage;
     }
 
-    private static HBox getHBox(TextField insuranceField, TextField patientField) {
-        Button fetchInsuranceDataButton = new Button("Versicherungs-ID holen");
-        fetchInsuranceDataButton.setOnAction(e -> {
-            String insurance = TransportDocumentController.getInsuranceData(patientField.getText());
-            insuranceField.setText( insurance == null ? "Keine Versicherungsdaten gefunden" : insurance);
+    private static HBox getHBox(TextField insuranceField, TextField patientField, TransportDocument existingDocument, AtomicReference<InsuranceData> insurance) {
+        TextField insuranceStatusField = new TextField();
+        insuranceStatusField.setPromptText("Versicherungsstatus eingeben");
 
+        if (existingDocument != null && existingDocument.insuranceData().isPresent()) {
+            InsuranceData insuranceData = TransportDocumentController.getInsuranceDataByID(existingDocument.insuranceData().get().id());
+            insuranceField.setText(insuranceData.insurance().id().value());
+            insuranceStatusField.setText(String.valueOf(insuranceData.insuranceStatus()));
+        }
+
+        Button fetchInsuranceDataButton = new Button("Versicherungs-Nummer holen");
+        fetchInsuranceDataButton.setOnAction(e -> {
+            System.out.println("Versicherungsdaten holen");
+            insurance.set(TransportDocumentController.getInsuranceData(patientField.getText()));
+            System.out.println("Versicherungsdaten: " + insurance.get());
+            insuranceField.setText( insurance.get() == null ? "Keine Versicherungsdaten gefunden" : insurance.get().insurance().id().value());
+            insuranceStatusField.setText(insurance.get() == null ? "Kein Versicherungsstatus gefunden" : String.valueOf(insurance.get().insuranceStatus()));
         });
 
+
+
+
         // Layout für Patient und Insurance Data
-        return new HBox(10, patientField, fetchInsuranceDataButton, insuranceField);
+        return new HBox(10, patientField, fetchInsuranceDataButton, insuranceField, insuranceStatusField);
     }
 
     /**
@@ -606,8 +637,14 @@ public class TransportDocumentManagement {
 
             Button archiveButton = new Button("Transportdokument archivieren");
             archiveButton.setOnAction(e -> {
-                TransportDocumentController.archiveTransportDocument(transportDocument.id());
-                optionsStage.close();
+                Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION, "Sind Sie sicher, dass Sie dieses Transportdokument archivieren möchten?", ButtonType.YES, ButtonType.NO);
+                confirmationAlert.showAndWait().ifPresent(response -> {
+                    if (response == ButtonType.YES) {
+                        TransportDocumentController.archiveTransportDocument(transportDocument.id());
+                        transportDocuments = TransportDocumentController.getTransportDocuments(user);
+                        optionsStage.close();
+                    }
+                });
             });
 
             root.getChildren().add(archiveButton);

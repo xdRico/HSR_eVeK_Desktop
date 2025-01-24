@@ -208,12 +208,23 @@ public class DataHandler implements IsInitializedListener {
         }
     }
 
-    public String getInsuranceData(String patientNumber) {
+    public InsuranceData getInsuranceData(String patientNumber) {
+        try {
+            Patient patient = getPatient(patientNumber);
+            sender.sendInsuranceData(new InsuranceData.Get(patient.insuranceData().id()));
+            return receiver.receiveInsuranceData();
+        } catch (Exception e) {
+            Log.sendException(e);
+            return null;
+        }
+    }
+
+    private Patient getPatient(String patientNumber) {
         try {
             sender.sendPatient(new Patient.Get(new Id<Patient>(patientNumber)));
-            Patient patient = receiver.receivePatient();
-            return patient.insuranceData().toString();
+            return receiver.receivePatient();
         } catch (Exception e) {
+
             Log.sendException(e);
             return null;
         }
@@ -525,6 +536,27 @@ public class DataHandler implements IsInitializedListener {
         try {
             sender.sendTransportDetails(new TransportDetails.Close(id));
             return receiver.receiveTransportDetails();
+        } catch (Exception e) {
+            Log.sendException(e);
+            return null;
+        }
+    }
+
+    public InsuranceData createInsuranceData(COptional<Reference<Patient>> patientOpt, Reference<Insurance> insurance, String insuranceStatus) {
+        try {
+            sender.sendInsuranceData(new InsuranceData.Create(patientOpt.get(),insurance, Integer.parseInt(insuranceStatus)));
+            return receiver.receiveInsuranceData();
+        } catch (Exception e) {
+            Log.sendException(e);
+            System.out.println("FEHLER createInsuranceData");
+            return null;
+        }
+    }
+
+    public InsuranceData getInsuranceDataByID(Id<InsuranceData> id) {
+        try {
+            sender.sendInsuranceData(new InsuranceData.Get(id));
+            return receiver.receiveInsuranceData();
         } catch (Exception e) {
             Log.sendException(e);
             return null;

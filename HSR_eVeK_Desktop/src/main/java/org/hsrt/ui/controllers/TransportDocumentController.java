@@ -107,7 +107,7 @@ public class TransportDocumentController {
         return transportDocument;
     }
 
-    public static String getInsuranceData(String patientNumber) {
+    public static InsuranceData getInsuranceData(String patientNumber) {
         DataHandler dataHandler = DataHandler.instance();
         // Initialisiere die Serververbindung
         dataHandler.initServerConnection();
@@ -121,7 +121,7 @@ public class TransportDocumentController {
             }
         }
 
-        String insuranceData = null;
+        InsuranceData insuranceData = null;
 
         try {
             insuranceData = dataHandler.getInsuranceData(patientNumber);
@@ -178,7 +178,52 @@ public class TransportDocumentController {
             return transportDocument;
         } catch (Exception e) {
             e.printStackTrace();
+
             return null;
         }
+    }
+
+    public static InsuranceData createInsuranceData(COptional<Reference<Patient>> patientOpt, Reference<Insurance> insurance, String insuranceStatus) {
+        DataHandler dataHandler = DataHandler.instance();
+        // Initialisiere die Serververbindung
+        dataHandler.initServerConnection();
+
+
+
+        InsuranceData insuranceData;
+
+        try {
+            insuranceData = dataHandler.createInsuranceData(patientOpt, insurance, insuranceStatus);
+            return insuranceData;
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("TransportDocumentController");
+    }
+        return null;
+    }
+
+    public static InsuranceData getInsuranceDataByID(Id<InsuranceData> id) {
+        DataHandler dataHandler = DataHandler.instance();
+        // Initialisiere die Serververbindung
+        dataHandler.initServerConnection();
+
+        // Warte, bis die Verbindung initialisiert ist
+        while (!dataHandler.isInitialized()) {
+            try {
+                Thread.sleep(100); // Warte 100ms
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        InsuranceData insuranceData = null;
+
+        try {
+            insuranceData = dataHandler.getInsuranceDataByID(id);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return insuranceData;
     }
 }

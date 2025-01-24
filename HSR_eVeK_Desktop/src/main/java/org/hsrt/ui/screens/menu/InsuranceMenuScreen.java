@@ -1,6 +1,7 @@
 package org.hsrt.ui.screens.menu;
 
 import de.ehealth.evek.api.entity.User;
+import de.ehealth.evek.api.type.UserRole;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -13,6 +14,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import org.hsrt.ui.screens.managementScreens.InvoiceManagement;
 import org.hsrt.ui.screens.managementScreens.TransportDocumentManagement;
+import org.hsrt.ui.screens.managementScreens.UserManagement;
 
 /**
  * The main menu screen of the application for Insurance users.
@@ -52,13 +54,23 @@ public class InsuranceMenuScreen extends Application {
         // Kategorie-Buttons
        Button sentInsuranceButton = createCategoryButton("Transportdokumente ansehen", transportDocumentManagement.createTransportDocumentManagement(user));
 
+       root.getChildren().add(sentInsuranceButton);
+       UserManagement userManagement = new UserManagement();
+
+       if(user.role() == UserRole.InsuranceAdmin || user.role() == UserRole.SuperUser) {
+           Button userManagementButton = createCategoryButton("Benutzerverwaltung", userManagement.createUserManagement(user));
+           root.getChildren().add(userManagementButton);
+       }
+
         // Kategorie-Buttons zur VBox hinzufügen
-        root.getChildren().addAll(sentInsuranceButton);
+
+        root.setAlignment(Pos.CENTER);
 
         // Scene und Stage konfigurieren
         Scene scene = new Scene(root, 800, 600);
         primaryStage.setTitle("Versicherungs Menübildschirm");
         primaryStage.setScene(scene);
+        primaryStage.centerOnScreen();
         primaryStage.show();
     }
 
